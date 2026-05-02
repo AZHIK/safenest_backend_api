@@ -1,0 +1,852 @@
+techinvestor:~/Documents/projects/safenest-backend$ docker compose up --build
+WARN[0000] /home/techinvestor/Documents/projects/safenest-backend/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
+[+] Building 468.1s (20/20) FINISHED                                                                                         
+ => [internal] load local bake definitions                                                                              0.0s
+ => => reading from stdin 765B                                                                                          0.0s
+ => [celery-worker internal] load build definition from Dockerfile                                                      0.0s
+ => => transferring dockerfile: 1.27kB                                                                                  0.0s
+ => [api internal] load metadata for docker.io/library/python:3.12-slim                                                 4.3s
+ => [auth] library/python:pull token for registry-1.docker.io                                                           0.0s
+ => [celery-worker internal] load .dockerignore                                                                         0.1s
+ => => transferring context: 2B                                                                                         0.0s
+ => CACHED [celery-worker  1/10] FROM docker.io/library/python:3.12-slim@sha256:46cb7cc2877e60fbd5e21a9ae6115c30ace7a0  0.0s
+ => [celery-worker internal] load build context                                                                         0.2s
+ => => transferring context: 199.45kB                                                                                   0.0s
+ => [celery-worker  2/10] RUN apt-get update && apt-get install -y --no-install-recommends     build-essential     l  178.7s
+ => [api  3/10] WORKDIR /app                                                                                            0.2s
+ => [celery-worker  4/10] COPY requirements.txt .                                                                       0.2s 
+ => [api  5/10] RUN pip install --no-cache-dir -r requirements.txt                                                    275.3s 
+ => [api  6/10] COPY app/ ./app/                                                                                        0.3s 
+ => [api  7/10] COPY alembic/ ./alembic/                                                                                0.2s 
+ => [api  8/10] COPY alembic.ini .                                                                                      0.2s 
+ => [celery-worker  9/10] RUN mkdir -p /app/uploads/evidence /app/uploads/temp && chmod 755 /app/uploads                0.5s 
+ => [celery-worker 10/10] RUN groupadd -r safenest && useradd -r -g safenest safenest && chown -R safenest:safenest /a  1.6s 
+ => [celery-worker] exporting to image                                                                                  5.6s 
+ => => exporting layers                                                                                                 5.3s
+ => => writing image sha256:e07289ce45a0725d488a01f8c9d43a4f7d0d79fc5ce1ab96880e27704e0cb1e2                            0.2s
+ => => naming to docker.io/library/safenest-backend-celery-worker                                                       0.1s
+ => [api] exporting to image                                                                                            5.6s
+ => => exporting layers                                                                                                 5.3s
+ => => writing image sha256:e07289ce45a0725d488a01f8c9d43a4f7d0d79fc5ce1ab96880e27704e0cb1e2                            0.2s
+ => => naming to docker.io/library/safenest-backend-api                                                                 0.1s
+ => [api] resolving provenance for metadata file                                                                        0.1s
+ => [celery-worker] resolving provenance for metadata file                                                              0.1s
+[+] Running 9/9
+ ✔ celery-worker                              Built                                                                     0.0s 
+ ✔ api                                        Built                                                                     0.0s 
+ ✔ Network safenest-backend_safenest_network  Created                                                                   0.2s 
+ ✔ Volume "safenest-backend_postgres_data"    Created                                                                   0.0s 
+ ✔ Volume "safenest-backend_redis_data"       Created                                                                   0.0s 
+ ✔ Container safenest_db                      Created                                                                   0.3s 
+ ✔ Container safenest_redis                   Created                                                                   0.3s 
+ ✔ Container safenest_api                     Created                                                                   0.2s 
+ ✔ Container safenest_celery                  Created                                                                   0.2s 
+Attaching to safenest_api, safenest_celery, safenest_db, safenest_redis
+safenest_redis   | 1:C 30 Apr 2026 09:55:28.702 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+safenest_redis   | 1:C 30 Apr 2026 09:55:28.702 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+safenest_redis   | 1:C 30 Apr 2026 09:55:28.702 * Redis version=7.4.8, bits=64, commit=00000000, modified=0, pid=1, just started
+safenest_redis   | 1:C 30 Apr 2026 09:55:28.703 * Configuration loaded
+safenest_redis   | 1:M 30 Apr 2026 09:55:28.703 * monotonic clock: POSIX clock_gettime
+safenest_redis   | 1:M 30 Apr 2026 09:55:28.707 * Running mode=standalone, port=6379.
+safenest_redis   | 1:M 30 Apr 2026 09:55:28.709 * Server initialized
+safenest_redis   | 1:M 30 Apr 2026 09:55:28.721 * Creating AOF base file appendonly.aof.1.base.rdb on server start
+safenest_redis   | 1:M 30 Apr 2026 09:55:28.747 * Creating AOF incr file appendonly.aof.1.incr.aof on server start
+safenest_redis   | 1:M 30 Apr 2026 09:55:28.747 * Ready to accept connections tcp
+safenest_db      | The files belonging to this database system will be owned by user "postgres".
+safenest_db      | This user must also own the server process.
+safenest_db      | 
+safenest_db      | The database cluster will be initialized with locale "en_US.utf8".
+safenest_db      | The default database encoding has accordingly been set to "UTF8".
+safenest_db      | The default text search configuration will be set to "english".
+safenest_db      | 
+safenest_db      | Data page checksums are disabled.
+safenest_db      | 
+safenest_db      | fixing permissions on existing directory /var/lib/postgresql/data ... ok
+safenest_db      | creating subdirectories ... ok
+safenest_db      | selecting dynamic shared memory implementation ... posix
+safenest_db      | selecting default max_connections ... 100
+safenest_db      | selecting default shared_buffers ... 128MB
+safenest_db      | selecting default time zone ... UTC
+safenest_db      | creating configuration files ... ok
+safenest_db      | running bootstrap script ... ok
+safenest_db      | sh: locale: not found
+safenest_db      | 2026-04-30 09:55:29.935 UTC [35] WARNING:  no usable system locales were found
+safenest_db      | performing post-bootstrap initialization ... ok
+safenest_db      | initdb: warning: enabling "trust" authentication for local connections
+safenest_db      | initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+safenest_db      | syncing data to disk ... ok
+safenest_db      | 
+safenest_db      | 
+safenest_db      | Success. You can now start the database server using:
+safenest_db      | 
+safenest_db      |     pg_ctl -D /var/lib/postgresql/data -l logfile start
+safenest_db      | 
+safenest_db      | waiting for server to start....2026-04-30 09:55:31.244 UTC [41] LOG:  starting PostgreSQL 15.17 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+safenest_db      | 2026-04-30 09:55:31.254 UTC [41] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+safenest_db      | 2026-04-30 09:55:31.285 UTC [44] LOG:  database system was shut down at 2026-04-30 09:55:30 UTC
+safenest_db      | 2026-04-30 09:55:31.303 UTC [41] LOG:  database system is ready to accept connections
+safenest_db      |  done
+safenest_db      | server started
+safenest_celery  | Usage: celery [OPTIONS] COMMAND [ARGS]...
+safenest_celery  | Try 'celery --help' for help.
+safenest_celery  | 
+safenest_celery  | Error: Invalid value for '-A' / '--app': 
+safenest_celery  | Unable to load celery application.
+safenest_celery  | While trying to load the module app.workers.celery_app the following error occurred:
+safenest_celery  | Traceback (most recent call last):
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/bin/celery.py", line 58, in convert
+safenest_celery  |     return find_app(value)
+safenest_celery  |            ^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/app/utils.py", line 386, in find_app
+safenest_celery  |     sym = imp(app)
+safenest_celery  |           ^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/utils/imports.py", line 104, in import_from_cwd
+safenest_celery  |     return imp(module, package=package)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
+safenest_celery  |     return _bootstrap._gcd_import(name[level:], package, level)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+safenest_celery  |   File "/app/app/workers/celery_app.py", line 4, in <module>
+safenest_celery  |     settings = get_settings()
+safenest_celery  |                ^^^^^^^^^^^^^^
+safenest_celery  |   File "/app/app/core/config.py", line 135, in get_settings
+safenest_celery  |     return Settings()
+safenest_celery  |            ^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic_settings/main.py", line 71, in __init__
+safenest_db      | CREATE DATABASE
+safenest_celery  |     super().__init__(
+safenest_db      | 
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic/main.py", line 164, in __init__
+safenest_celery  |     __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
+safenest_celery  | pydantic_core._pydantic_core.ValidationError: 2 validation errors for Settings
+safenest_celery  | JWT_SECRET_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_db      | 
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_db      | /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+safenest_celery  | ENCRYPTION_KEY
+safenest_db      | 
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | 
+safenest_db      | waiting for server to shut down....2026-04-30 09:55:31.649 UTC [41] LOG:  received fast shutdown request
+safenest_db      | 2026-04-30 09:55:31.670 UTC [41] LOG:  aborting any active transactions
+safenest_db      | 2026-04-30 09:55:31.678 UTC [41] LOG:  background worker "logical replication launcher" (PID 47) exited with exit code 1
+safenest_db      | 2026-04-30 09:55:31.679 UTC [42] LOG:  shutting down
+safenest_db      | 2026-04-30 09:55:31.685 UTC [42] LOG:  checkpoint starting: shutdown immediate
+safenest_db      | 2026-04-30 09:55:31.855 UTC [42] LOG:  checkpoint complete: wrote 921 buffers (5.6%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.056 s, sync=0.070 s, total=0.177 s; sync files=301, longest=0.018 s, average=0.001 s; distance=4239 kB, estimate=4239 kB
+safenest_db      | 2026-04-30 09:55:31.866 UTC [41] LOG:  database system is shut down
+safenest_db      |  done
+safenest_db      | server stopped
+safenest_db      | 
+safenest_db      | PostgreSQL init process complete; ready for start up.
+safenest_db      | 
+safenest_db      | 2026-04-30 09:55:32.038 UTC [1] LOG:  starting PostgreSQL 15.17 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+safenest_db      | 2026-04-30 09:55:32.038 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+safenest_db      | 2026-04-30 09:55:32.038 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+safenest_db      | 2026-04-30 09:55:32.077 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+safenest_db      | 2026-04-30 09:55:32.115 UTC [57] LOG:  database system was shut down at 2026-04-30 09:55:31 UTC
+safenest_db      | 2026-04-30 09:55:32.139 UTC [1] LOG:  database system is ready to accept connections
+safenest_celery exited with code 0
+safenest_celery  | Usage: celery [OPTIONS] COMMAND [ARGS]...
+safenest_celery  | Try 'celery --help' for help.
+safenest_celery  | 
+safenest_celery  | Error: Invalid value for '-A' / '--app': 
+safenest_celery  | Unable to load celery application.
+safenest_celery  | While trying to load the module app.workers.celery_app the following error occurred:
+safenest_celery  | Traceback (most recent call last):
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/bin/celery.py", line 58, in convert
+safenest_celery  |     return find_app(value)
+safenest_celery  |            ^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/app/utils.py", line 386, in find_app
+safenest_celery  |     sym = imp(app)
+safenest_celery  |           ^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/utils/imports.py", line 104, in import_from_cwd
+safenest_celery  |     return imp(module, package=package)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
+safenest_celery  |     return _bootstrap._gcd_import(name[level:], package, level)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+safenest_celery  |   File "/app/app/workers/celery_app.py", line 4, in <module>
+safenest_celery  |     settings = get_settings()
+safenest_celery  |                ^^^^^^^^^^^^^^
+safenest_celery  |   File "/app/app/core/config.py", line 135, in get_settings
+safenest_celery  |     return Settings()
+safenest_celery  |            ^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic_settings/main.py", line 71, in __init__
+safenest_celery  |     super().__init__(
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic/main.py", line 164, in __init__
+safenest_celery  |     __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
+safenest_celery  | pydantic_core._pydantic_core.ValidationError: 2 validation errors for Settings
+safenest_celery  | JWT_SECRET_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | ENCRYPTION_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | 
+safenest_celery exited with code 2
+safenest_api     | INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+safenest_api     | INFO:     Started parent process [1]
+safenest_celery  | Usage: celery [OPTIONS] COMMAND [ARGS]...
+safenest_celery  | Try 'celery --help' for help.
+safenest_celery  | 
+safenest_celery  | Error: Invalid value for '-A' / '--app': 
+safenest_celery  | Unable to load celery application.
+safenest_celery  | While trying to load the module app.workers.celery_app the following error occurred:
+safenest_celery  | Traceback (most recent call last):
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/bin/celery.py", line 58, in convert
+safenest_celery  |     return find_app(value)
+safenest_celery  |            ^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/app/utils.py", line 386, in find_app
+safenest_celery  |     sym = imp(app)
+safenest_celery  |           ^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/utils/imports.py", line 104, in import_from_cwd
+safenest_celery  |     return imp(module, package=package)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
+safenest_celery  |     return _bootstrap._gcd_import(name[level:], package, level)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+safenest_celery  |   File "/app/app/workers/celery_app.py", line 4, in <module>
+safenest_celery  |     settings = get_settings()
+safenest_celery  |                ^^^^^^^^^^^^^^
+safenest_celery  |   File "/app/app/core/config.py", line 135, in get_settings
+safenest_celery  |     return Settings()
+safenest_celery  |            ^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic_settings/main.py", line 71, in __init__
+safenest_celery  |     super().__init__(
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic/main.py", line 164, in __init__
+safenest_celery  |     __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
+safenest_celery  | pydantic_core._pydantic_core.ValidationError: 2 validation errors for Settings
+safenest_celery  | JWT_SECRET_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | ENCRYPTION_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | 
+safenest_celery exited with code 2
+safenest_celery  | Usage: celery [OPTIONS] COMMAND [ARGS]...
+safenest_celery  | Try 'celery --help' for help.
+safenest_celery  | 
+safenest_celery  | Error: Invalid value for '-A' / '--app': 
+safenest_celery  | Unable to load celery application.
+safenest_celery  | While trying to load the module app.workers.celery_app the following error occurred:
+safenest_celery  | Traceback (most recent call last):
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/bin/celery.py", line 58, in convert
+safenest_celery  |     return find_app(value)
+safenest_celery  |            ^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/app/utils.py", line 386, in find_app
+safenest_celery  |     sym = imp(app)
+safenest_celery  |           ^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/utils/imports.py", line 104, in import_from_cwd
+safenest_celery  |     return imp(module, package=package)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
+safenest_celery  |     return _bootstrap._gcd_import(name[level:], package, level)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+safenest_celery  |   File "/app/app/workers/celery_app.py", line 4, in <module>
+safenest_celery  |     settings = get_settings()
+safenest_celery  |                ^^^^^^^^^^^^^^
+safenest_celery  |   File "/app/app/core/config.py", line 135, in get_settings
+safenest_celery  |     return Settings()
+safenest_celery  |            ^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic_settings/main.py", line 71, in __init__
+safenest_celery  |     super().__init__(
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic/main.py", line 164, in __init__
+safenest_celery  |     __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
+safenest_celery  | pydantic_core._pydantic_core.ValidationError: 2 validation errors for Settings
+safenest_celery  | JWT_SECRET_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | ENCRYPTION_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | 
+safenest_celery exited with code 2
+safenest_api     | Process SpawnProcess-2:
+safenest_api     | Traceback (most recent call last):
+safenest_api     |   File "/usr/local/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+safenest_api     |     self.run()
+safenest_api     |   File "/usr/local/lib/python3.12/multiprocessing/process.py", line 108, in run
+safenest_api     |     self._target(*self._args, **self._kwargs)
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/uvicorn/_subprocess.py", line 76, in subprocess_started
+safenest_api     |     target(sockets=sockets)
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 61, in run
+safenest_api     |     return asyncio.run(self.serve(sockets=sockets))
+safenest_api     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_api     |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 195, in run
+safenest_api     |     return runner.run(main)
+safenest_api     |            ^^^^^^^^^^^^^^^^
+safenest_api     |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 118, in run
+safenest_api     |     return self._loop.run_until_complete(task)
+safenest_api     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_api     |   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 68, in serve
+safenest_api     |     config.load()
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/uvicorn/config.py", line 467, in load
+safenest_api     |     self.loaded_app = import_from_string(self.app)
+safenest_api     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 21, in import_from_string
+safenest_api     |     module = importlib.import_module(module_str)
+safenest_api     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_api     |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
+safenest_api     |     return _bootstrap._gcd_import(name[level:], package, level)
+safenest_api     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_api     |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+safenest_api     |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+safenest_api     |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+safenest_api     |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+safenest_api     |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+safenest_api     |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+safenest_api     |   File "/app/app/main.py", line 8, in <module>
+safenest_api     |     from app.api.v1.router import api_router
+safenest_api     |   File "/app/app/api/v1/router.py", line 3, in <module>
+safenest_api     |     from app.api.v1.endpoints import auth, sos, reports, messaging, support, training, health
+safenest_api     |   File "/app/app/api/v1/endpoints/auth.py", line 6, in <module>
+safenest_api     |     from app.api.deps import get_current_user, get_db, allow_anonymous
+safenest_api     |   File "/app/app/api/deps.py", line 10, in <module>
+safenest_api     |     from app.core.logging import security_logger
+safenest_api     |   File "/app/app/core/logging.py", line 9, in <module>
+safenest_api     |     settings = get_settings()
+safenest_api     |                ^^^^^^^^^^^^^^
+safenest_api     |   File "/app/app/core/config.py", line 135, in get_settings
+safenest_api     |     return Settings()
+safenest_api     |            ^^^^^^^^^^
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/pydantic_settings/main.py", line 71, in __init__
+safenest_api     |     super().__init__(
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/pydantic/main.py", line 164, in __init__
+safenest_api     |     __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
+safenest_api     | pydantic_core._pydantic_core.ValidationError: 3 validation errors for Settings
+safenest_api     | CELERY_BROKER_URL
+safenest_api     |   Field required [type=missing, input_value={'ENVIRONMENT': 'developm...TP_EXPIRY_MINUTES': '5'}, input_type=dict]
+safenest_api     |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_api     | CELERY_RESULT_BACKEND
+safenest_api     |   Field required [type=missing, input_value={'ENVIRONMENT': 'developm...TP_EXPIRY_MINUTES': '5'}, input_type=dict]
+safenest_api     |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_api     | ENCRYPTION_KEY
+safenest_api     |   Field required [type=missing, input_value={'ENVIRONMENT': 'developm...TP_EXPIRY_MINUTES': '5'}, input_type=dict]
+safenest_api     |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_api     | Process SpawnProcess-1:
+safenest_api     | Traceback (most recent call last):
+safenest_api     |   File "/usr/local/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+safenest_api     |     self.run()
+safenest_api     |   File "/usr/local/lib/python3.12/multiprocessing/process.py", line 108, in run
+safenest_api     |     self._target(*self._args, **self._kwargs)
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/uvicorn/_subprocess.py", line 76, in subprocess_started
+safenest_api     |     target(sockets=sockets)
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 61, in run
+safenest_api     |     return asyncio.run(self.serve(sockets=sockets))
+safenest_api     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_api     |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 195, in run
+safenest_api     |     return runner.run(main)
+safenest_api     |            ^^^^^^^^^^^^^^^^
+safenest_api     |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 118, in run
+safenest_api     |     return self._loop.run_until_complete(task)
+safenest_api     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_api     |   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 68, in serve
+safenest_api     |     config.load()
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/uvicorn/config.py", line 467, in load
+safenest_api     |     self.loaded_app = import_from_string(self.app)
+safenest_api     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 21, in import_from_string
+safenest_api     |     module = importlib.import_module(module_str)
+safenest_api     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_api     |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
+safenest_api     |     return _bootstrap._gcd_import(name[level:], package, level)
+safenest_api     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_api     |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+safenest_api     |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+safenest_api     |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+safenest_api     |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+safenest_api     |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+safenest_api     |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+safenest_api     |   File "/app/app/main.py", line 8, in <module>
+safenest_api     |     from app.api.v1.router import api_router
+safenest_api     |   File "/app/app/api/v1/router.py", line 3, in <module>
+safenest_api     |     from app.api.v1.endpoints import auth, sos, reports, messaging, support, training, health
+safenest_api     |   File "/app/app/api/v1/endpoints/auth.py", line 6, in <module>
+safenest_api     |     from app.api.deps import get_current_user, get_db, allow_anonymous
+safenest_api     |   File "/app/app/api/deps.py", line 10, in <module>
+safenest_api     |     from app.core.logging import security_logger
+safenest_api     |   File "/app/app/core/logging.py", line 9, in <module>
+safenest_api     |     settings = get_settings()
+safenest_api     |                ^^^^^^^^^^^^^^
+safenest_api     |   File "/app/app/core/config.py", line 135, in get_settings
+safenest_api     |     return Settings()
+safenest_api     |            ^^^^^^^^^^
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/pydantic_settings/main.py", line 71, in __init__
+safenest_api     |     super().__init__(
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/pydantic/main.py", line 164, in __init__
+safenest_api     |     __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
+safenest_api     | pydantic_core._pydantic_core.ValidationError: 3 validation errors for Settings
+safenest_api     | CELERY_BROKER_URL
+safenest_api     |   Field required [type=missing, input_value={'ENVIRONMENT': 'developm...TP_EXPIRY_MINUTES': '5'}, input_type=dict]
+safenest_api     |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_api     | CELERY_RESULT_BACKEND
+safenest_api     |   Field required [type=missing, input_value={'ENVIRONMENT': 'developm...TP_EXPIRY_MINUTES': '5'}, input_type=dict]
+safenest_api     |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_api     | ENCRYPTION_KEY
+safenest_api     |   Field required [type=missing, input_value={'ENVIRONMENT': 'developm...TP_EXPIRY_MINUTES': '5'}, input_type=dict]
+safenest_api     |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_api     | Process SpawnProcess-4:
+safenest_api     | Traceback (most recent call last):
+safenest_api     |   File "/usr/local/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+safenest_api     |     self.run()
+safenest_api     |   File "/usr/local/lib/python3.12/multiprocessing/process.py", line 108, in run
+safenest_api     |     self._target(*self._args, **self._kwargs)
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/uvicorn/_subprocess.py", line 76, in subprocess_started
+safenest_api     |     target(sockets=sockets)
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 61, in run
+safenest_api     |     return asyncio.run(self.serve(sockets=sockets))
+safenest_api     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_api     |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 195, in run
+safenest_api     |     return runner.run(main)
+safenest_api     |            ^^^^^^^^^^^^^^^^
+safenest_api     |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 118, in run
+safenest_api     |     return self._loop.run_until_complete(task)
+safenest_api     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_api     |   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 68, in serve
+safenest_api     |     config.load()
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/uvicorn/config.py", line 467, in load
+safenest_api     |     self.loaded_app = import_from_string(self.app)
+safenest_api     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 21, in import_from_string
+safenest_api     |     module = importlib.import_module(module_str)
+safenest_api     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_api     |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
+safenest_api     |     return _bootstrap._gcd_import(name[level:], package, level)
+safenest_api     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_api     |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+safenest_api     |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+safenest_api     |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+safenest_api     |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+safenest_api     |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+safenest_api     |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+safenest_api     |   File "/app/app/main.py", line 8, in <module>
+safenest_api     |     from app.api.v1.router import api_router
+safenest_api     |   File "/app/app/api/v1/router.py", line 3, in <module>
+safenest_api     |     from app.api.v1.endpoints import auth, sos, reports, messaging, support, training, health
+safenest_api     |   File "/app/app/api/v1/endpoints/auth.py", line 6, in <module>
+safenest_api     |     from app.api.deps import get_current_user, get_db, allow_anonymous
+safenest_api     |   File "/app/app/api/deps.py", line 10, in <module>
+safenest_api     |     from app.core.logging import security_logger
+safenest_api     |   File "/app/app/core/logging.py", line 9, in <module>
+safenest_api     |     settings = get_settings()
+safenest_api     |                ^^^^^^^^^^^^^^
+safenest_api     |   File "/app/app/core/config.py", line 135, in get_settings
+safenest_api     |     return Settings()
+safenest_api     |            ^^^^^^^^^^
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/pydantic_settings/main.py", line 71, in __init__
+safenest_api     |     super().__init__(
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/pydantic/main.py", line 164, in __init__
+safenest_api     |     __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
+safenest_api     | pydantic_core._pydantic_core.ValidationError: 3 validation errors for Settings
+safenest_api     | CELERY_BROKER_URL
+safenest_api     |   Field required [type=missing, input_value={'ENVIRONMENT': 'developm...TP_EXPIRY_MINUTES': '5'}, input_type=dict]
+safenest_api     |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_api     | CELERY_RESULT_BACKEND
+safenest_api     |   Field required [type=missing, input_value={'ENVIRONMENT': 'developm...TP_EXPIRY_MINUTES': '5'}, input_type=dict]
+safenest_api     |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_api     | ENCRYPTION_KEY
+safenest_api     |   Field required [type=missing, input_value={'ENVIRONMENT': 'developm...TP_EXPIRY_MINUTES': '5'}, input_type=dict]
+safenest_api     |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_api     | Process SpawnProcess-3:
+safenest_api     | Traceback (most recent call last):
+safenest_api     |   File "/usr/local/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+safenest_api     |     self.run()
+safenest_api     |   File "/usr/local/lib/python3.12/multiprocessing/process.py", line 108, in run
+safenest_api     |     self._target(*self._args, **self._kwargs)
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/uvicorn/_subprocess.py", line 76, in subprocess_started
+safenest_api     |     target(sockets=sockets)
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 61, in run
+safenest_api     |     return asyncio.run(self.serve(sockets=sockets))
+safenest_api     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_api     |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 195, in run
+safenest_api     |     return runner.run(main)
+safenest_api     |            ^^^^^^^^^^^^^^^^
+safenest_api     |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 118, in run
+safenest_api     |     return self._loop.run_until_complete(task)
+safenest_api     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_api     |   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 68, in serve
+safenest_api     |     config.load()
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/uvicorn/config.py", line 467, in load
+safenest_api     |     self.loaded_app = import_from_string(self.app)
+safenest_api     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 21, in import_from_string
+safenest_api     |     module = importlib.import_module(module_str)
+safenest_api     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_api     |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
+safenest_api     |     return _bootstrap._gcd_import(name[level:], package, level)
+safenest_api     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_api     |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+safenest_api     |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+safenest_api     |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+safenest_api     |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+safenest_api     |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+safenest_api     |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+safenest_api     |   File "/app/app/main.py", line 8, in <module>
+safenest_api     |     from app.api.v1.router import api_router
+safenest_api     |   File "/app/app/api/v1/router.py", line 3, in <module>
+safenest_api     |     from app.api.v1.endpoints import auth, sos, reports, messaging, support, training, health
+safenest_api     |   File "/app/app/api/v1/endpoints/auth.py", line 6, in <module>
+safenest_api     |     from app.api.deps import get_current_user, get_db, allow_anonymous
+safenest_api     |   File "/app/app/api/deps.py", line 10, in <module>
+safenest_api     |     from app.core.logging import security_logger
+safenest_api     |   File "/app/app/core/logging.py", line 9, in <module>
+safenest_api     |     settings = get_settings()
+safenest_api     |                ^^^^^^^^^^^^^^
+safenest_api     |   File "/app/app/core/config.py", line 135, in get_settings
+safenest_api     |     return Settings()
+safenest_api     |            ^^^^^^^^^^
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/pydantic_settings/main.py", line 71, in __init__
+safenest_api     |     super().__init__(
+safenest_api     |   File "/usr/local/lib/python3.12/site-packages/pydantic/main.py", line 164, in __init__
+safenest_api     |     __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
+safenest_api     | pydantic_core._pydantic_core.ValidationError: 3 validation errors for Settings
+safenest_api     | CELERY_BROKER_URL
+safenest_api     |   Field required [type=missing, input_value={'ENVIRONMENT': 'developm...TP_EXPIRY_MINUTES': '5'}, input_type=dict]
+safenest_api     |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_api     | CELERY_RESULT_BACKEND
+safenest_api     |   Field required [type=missing, input_value={'ENVIRONMENT': 'developm...TP_EXPIRY_MINUTES': '5'}, input_type=dict]
+safenest_api     |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_api     | ENCRYPTION_KEY
+safenest_api     |   Field required [type=missing, input_value={'ENVIRONMENT': 'developm...TP_EXPIRY_MINUTES': '5'}, input_type=dict]
+safenest_api     |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | Usage: celery [OPTIONS] COMMAND [ARGS]...
+safenest_celery  | Try 'celery --help' for help.
+safenest_celery  | 
+safenest_celery  | Error: Invalid value for '-A' / '--app': 
+safenest_celery  | Unable to load celery application.
+safenest_celery  | While trying to load the module app.workers.celery_app the following error occurred:
+safenest_celery  | Traceback (most recent call last):
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/bin/celery.py", line 58, in convert
+safenest_celery  |     return find_app(value)
+safenest_celery  |            ^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/app/utils.py", line 386, in find_app
+safenest_celery  |     sym = imp(app)
+safenest_celery  |           ^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/utils/imports.py", line 104, in import_from_cwd
+safenest_celery  |     return imp(module, package=package)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
+safenest_celery  |     return _bootstrap._gcd_import(name[level:], package, level)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+safenest_celery  |   File "/app/app/workers/celery_app.py", line 4, in <module>
+safenest_celery  |     settings = get_settings()
+safenest_celery  |                ^^^^^^^^^^^^^^
+safenest_celery  |   File "/app/app/core/config.py", line 135, in get_settings
+safenest_celery  |     return Settings()
+safenest_celery  |            ^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic_settings/main.py", line 71, in __init__
+safenest_celery  |     super().__init__(
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic/main.py", line 164, in __init__
+safenest_celery  |     __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
+safenest_celery  | pydantic_core._pydantic_core.ValidationError: 2 validation errors for Settings
+safenest_celery  | JWT_SECRET_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | ENCRYPTION_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | 
+safenest_celery exited with code 2
+safenest_celery  | Usage: celery [OPTIONS] COMMAND [ARGS]...
+safenest_celery  | Try 'celery --help' for help.
+safenest_celery  | 
+safenest_celery  | Error: Invalid value for '-A' / '--app': 
+safenest_celery  | Unable to load celery application.
+safenest_celery  | While trying to load the module app.workers.celery_app the following error occurred:
+safenest_celery  | Traceback (most recent call last):
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/bin/celery.py", line 58, in convert
+safenest_celery  |     return find_app(value)
+safenest_celery  |            ^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/app/utils.py", line 386, in find_app
+safenest_celery  |     sym = imp(app)
+safenest_celery  |           ^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/utils/imports.py", line 104, in import_from_cwd
+safenest_celery  |     return imp(module, package=package)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
+safenest_celery  |     return _bootstrap._gcd_import(name[level:], package, level)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+safenest_celery  |   File "/app/app/workers/celery_app.py", line 4, in <module>
+safenest_celery  |     settings = get_settings()
+safenest_celery  |                ^^^^^^^^^^^^^^
+safenest_celery  |   File "/app/app/core/config.py", line 135, in get_settings
+safenest_celery  |     return Settings()
+safenest_celery  |            ^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic_settings/main.py", line 71, in __init__
+safenest_celery  |     super().__init__(
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic/main.py", line 164, in __init__
+safenest_celery  |     __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
+safenest_celery  | pydantic_core._pydantic_core.ValidationError: 2 validation errors for Settings
+safenest_celery  | JWT_SECRET_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | ENCRYPTION_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | 
+safenest_celery exited with code 2
+safenest_celery  | Usage: celery [OPTIONS] COMMAND [ARGS]...
+safenest_celery  | Try 'celery --help' for help.
+safenest_celery  | 
+safenest_celery  | Error: Invalid value for '-A' / '--app': 
+safenest_celery  | Unable to load celery application.
+safenest_celery  | While trying to load the module app.workers.celery_app the following error occurred:
+safenest_celery  | Traceback (most recent call last):
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/bin/celery.py", line 58, in convert
+safenest_celery  |     return find_app(value)
+safenest_celery  |            ^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/app/utils.py", line 386, in find_app
+safenest_celery  |     sym = imp(app)
+safenest_celery  |           ^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/utils/imports.py", line 104, in import_from_cwd
+safenest_celery  |     return imp(module, package=package)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
+safenest_celery  |     return _bootstrap._gcd_import(name[level:], package, level)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+safenest_celery  |   File "/app/app/workers/celery_app.py", line 4, in <module>
+safenest_celery  |     settings = get_settings()
+safenest_celery  |                ^^^^^^^^^^^^^^
+safenest_celery  |   File "/app/app/core/config.py", line 135, in get_settings
+safenest_celery  |     return Settings()
+safenest_celery  |            ^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic_settings/main.py", line 71, in __init__
+safenest_celery  |     super().__init__(
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic/main.py", line 164, in __init__
+safenest_celery  |     __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
+safenest_celery  | pydantic_core._pydantic_core.ValidationError: 2 validation errors for Settings
+safenest_celery  | JWT_SECRET_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | ENCRYPTION_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | 
+safenest_celery exited with code 2
+safenest_celery  | Usage: celery [OPTIONS] COMMAND [ARGS]...
+safenest_celery  | Try 'celery --help' for help.
+safenest_celery  | 
+safenest_celery  | Error: Invalid value for '-A' / '--app': 
+safenest_celery  | Unable to load celery application.
+safenest_celery  | While trying to load the module app.workers.celery_app the following error occurred:
+safenest_celery  | Traceback (most recent call last):
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/bin/celery.py", line 58, in convert
+safenest_celery  |     return find_app(value)
+safenest_celery  |            ^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/app/utils.py", line 386, in find_app
+safenest_celery  |     sym = imp(app)
+safenest_celery  |           ^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/utils/imports.py", line 104, in import_from_cwd
+safenest_celery  |     return imp(module, package=package)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
+safenest_celery  |     return _bootstrap._gcd_import(name[level:], package, level)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+safenest_celery  |   File "/app/app/workers/celery_app.py", line 4, in <module>
+safenest_celery  |     settings = get_settings()
+safenest_celery  |                ^^^^^^^^^^^^^^
+safenest_celery  |   File "/app/app/core/config.py", line 135, in get_settings
+safenest_celery  |     return Settings()
+safenest_celery  |            ^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic_settings/main.py", line 71, in __init__
+safenest_celery  |     super().__init__(
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic/main.py", line 164, in __init__
+safenest_celery  |     __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
+safenest_celery  | pydantic_core._pydantic_core.ValidationError: 2 validation errors for Settings
+safenest_celery  | JWT_SECRET_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | ENCRYPTION_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | 
+safenest_celery exited with code 2
+safenest_celery  | Usage: celery [OPTIONS] COMMAND [ARGS]...
+safenest_celery  | Try 'celery --help' for help.
+safenest_celery  | 
+safenest_celery  | Error: Invalid value for '-A' / '--app': 
+safenest_celery  | Unable to load celery application.
+safenest_celery  | While trying to load the module app.workers.celery_app the following error occurred:
+safenest_celery  | Traceback (most recent call last):
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/bin/celery.py", line 58, in convert
+safenest_celery  |     return find_app(value)
+safenest_celery  |            ^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/app/utils.py", line 386, in find_app
+safenest_celery  |     sym = imp(app)
+safenest_celery  |           ^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/utils/imports.py", line 104, in import_from_cwd
+safenest_celery  |     return imp(module, package=package)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
+safenest_celery  |     return _bootstrap._gcd_import(name[level:], package, level)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+safenest_celery  |   File "/app/app/workers/celery_app.py", line 4, in <module>
+safenest_celery  |     settings = get_settings()
+safenest_celery  |                ^^^^^^^^^^^^^^
+safenest_celery  |   File "/app/app/core/config.py", line 135, in get_settings
+safenest_celery  |     return Settings()
+safenest_celery  |            ^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic_settings/main.py", line 71, in __init__
+safenest_celery  |     super().__init__(
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic/main.py", line 164, in __init__
+safenest_celery  |     __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
+safenest_celery  | pydantic_core._pydantic_core.ValidationError: 2 validation errors for Settings
+safenest_celery  | JWT_SECRET_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | ENCRYPTION_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | 
+safenest_celery exited with code 2
+safenest_celery  | Usage: celery [OPTIONS] COMMAND [ARGS]...
+safenest_celery  | Try 'celery --help' for help.
+safenest_celery  | 
+safenest_celery  | Error: Invalid value for '-A' / '--app': 
+safenest_celery  | Unable to load celery application.
+safenest_celery  | While trying to load the module app.workers.celery_app the following error occurred:
+safenest_celery  | Traceback (most recent call last):
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/bin/celery.py", line 58, in convert
+safenest_celery  |     return find_app(value)
+safenest_celery  |            ^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/app/utils.py", line 386, in find_app
+safenest_celery  |     sym = imp(app)
+safenest_celery  |           ^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/utils/imports.py", line 104, in import_from_cwd
+safenest_celery  |     return imp(module, package=package)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
+safenest_celery  |     return _bootstrap._gcd_import(name[level:], package, level)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+safenest_celery  |   File "/app/app/workers/celery_app.py", line 4, in <module>
+safenest_celery  |     settings = get_settings()
+safenest_celery  |                ^^^^^^^^^^^^^^
+safenest_celery  |   File "/app/app/core/config.py", line 135, in get_settings
+safenest_celery  |     return Settings()
+safenest_celery  |            ^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic_settings/main.py", line 71, in __init__
+safenest_celery  |     super().__init__(
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic/main.py", line 164, in __init__
+safenest_celery  |     __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
+safenest_celery  | pydantic_core._pydantic_core.ValidationError: 2 validation errors for Settings
+safenest_celery  | JWT_SECRET_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | ENCRYPTION_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | 
+safenest_celery exited with code 2
+safenest_celery  | Usage: celery [OPTIONS] COMMAND [ARGS]...
+safenest_celery  | Try 'celery --help' for help.
+safenest_celery  | 
+safenest_celery  | Error: Invalid value for '-A' / '--app': 
+safenest_celery  | Unable to load celery application.
+safenest_celery  | While trying to load the module app.workers.celery_app the following error occurred:
+safenest_celery  | Traceback (most recent call last):
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/bin/celery.py", line 58, in convert
+safenest_celery  |     return find_app(value)
+safenest_celery  |            ^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/app/utils.py", line 386, in find_app
+safenest_celery  |     sym = imp(app)
+safenest_celery  |           ^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/celery/utils/imports.py", line 104, in import_from_cwd
+safenest_celery  |     return imp(module, package=package)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
+safenest_celery  |     return _bootstrap._gcd_import(name[level:], package, level)
+safenest_celery  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+safenest_celery  |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+safenest_celery  |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+safenest_celery  |   File "/app/app/workers/celery_app.py", line 4, in <module>
+safenest_celery  |     settings = get_settings()
+safenest_celery  |                ^^^^^^^^^^^^^^
+safenest_celery  |   File "/app/app/core/config.py", line 135, in get_settings
+safenest_celery  |     return Settings()
+safenest_celery  |            ^^^^^^^^^^
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic_settings/main.py", line 71, in __init__
+safenest_celery  |     super().__init__(
+safenest_celery  |   File "/usr/local/lib/python3.12/site-packages/pydantic/main.py", line 164, in __init__
+safenest_celery  |     __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
+safenest_celery  | pydantic_core._pydantic_core.ValidationError: 2 validation errors for Settings
+safenest_celery  | JWT_SECRET_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | ENCRYPTION_KEY
+safenest_celery  |   Field required [type=missing, input_value={'DATABASE_URL': 'postgre...dis://localhost:6379/2'}, input_type=dict]
+safenest_celery  |     For further information visit https://errors.pydantic.dev/2.5/v/missing
+safenest_celery  | 
+safenest_celery exited with code 2
+
+w Enable Watch

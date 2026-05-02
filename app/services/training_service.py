@@ -1,0 +1,75 @@
+from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.training import TrainingCategory, TrainingLesson
+from app.repositories.training import training_category_repo, training_lesson_repo
+
+
+class TrainingService:
+    async def get_all_categories(
+        self,
+        db: AsyncSession
+    ) -> List[TrainingCategory]:
+        """Get all active categories. Returns ORM objects (caller must map to schema)."""
+        return await training_category_repo.get_active(db)
+
+    async def get_featured_categories(
+        self,
+        db: AsyncSession,
+        limit: int = 3
+    ) -> List[TrainingCategory]:
+        """Get featured categories. Returns ORM objects (caller must map to schema)."""
+        return await training_category_repo.get_featured(db, limit)
+
+    async def get_category_by_slug(
+        self,
+        db: AsyncSession,
+        slug: str
+    ) -> Optional[TrainingCategory]:
+        """Get category by slug. Returns ORM object (caller must map to schema)."""
+        return await training_category_repo.get_by_slug(db, slug)
+
+    async def get_lessons_by_category(
+        self,
+        db: AsyncSession,
+        category_id: UUID
+    ) -> List[TrainingLesson]:
+        """Get lessons by category. Returns ORM objects (caller must map to schema)."""
+        return await training_lesson_repo.get_by_category(db, category_id)
+
+    async def get_lesson_detail(
+        self,
+        db: AsyncSession,
+        lesson_id: UUID
+    ) -> TrainingLesson:
+        """Get lesson detail with category. Returns ORM object (caller must map to schema)."""
+        lesson = await training_lesson_repo.get_by_id_full(db, lesson_id)
+        if not lesson:
+            raise ValueError("Lesson not found")
+
+        # Increment view count
+        await training_lesson_repo.increment_view_count(db, lesson_id)
+
+        return lesson
+
+    async def get_lesson_by_slug(
+        self,
+        db: AsyncSession,
+        slug: str
+    ) -> Optional[TrainingLesson]:
+        """Get lesson by slug. Returns ORM object (caller must map to schema)."""
+        return await training_lesson_repo.get_by_slug(db, slug)
+
+    async def get_all_lessons(
+        self,
+        db: AsyncSession,
+        skip: int = 0,
+        limit: int = 50
+    ) -> List[TrainingLesson]:
+        """Get all active lessons. Returns ORM objects (caller must map to schema)."""
+        return await training_lesson_repo.get_active(db, skip, limit)
+
+
+training_service = TrainingService()
