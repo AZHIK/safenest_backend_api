@@ -25,11 +25,14 @@ SafeNest Backend
 4. **Encrypted Messaging** - E2EE chat with WebSocket delivery
 5. **Support Centers** - Geolocation-based center discovery
 6. **Training Content** - Digital self-defense resources
+7. **Operator RBAC** - Enterprise role-based access control for institutional staff (police, legal, NGO, etc.)
 
 ### Security Features
 
-- JWT authentication with refresh tokens
-- Passwordless secure auth (OTP)
+- JWT authentication with refresh tokens (dual domain: survivor + operator)
+- Passwordless secure auth (OTP) for survivors
+- Enterprise RBAC with 100+ granular permissions
+- Redis-cached permission resolution
 - Encrypted file storage abstraction
 - Request validation and sanitization
 - Rate limiting (placeholder)
@@ -72,6 +75,15 @@ alembic upgrade head
 
 # Start server
 uvicorn app.main:app --reload
+```
+
+4. **Apply RBAC migrations (first time only):**
+```bash
+# Run all migrations including operator RBAC tables
+alembic upgrade head
+
+# Or using Docker:
+docker compose exec api alembic upgrade head
 ```
 
 ### Environment Variables
@@ -956,6 +968,180 @@ Get lesson by slug.
 
 **Response:** `TrainingLessonResponse`
 
+---
+
+### Operator RBAC (Enterprise Admin)
+
+Separate authentication and authorization system for institutional operators (police, legal, counselors, NGO staff, etc.). Completely isolated from mobile survivor authentication.
+
+#### Authentication
+
+##### `POST /api/v1/operator/auth/login`
+Operator login with email/password.
+
+**Request Body:**
+```json
+{
+  "email": "string",
+  "password": "string"
+}
+```
+
+**Response:** `OperatorTokenResponse`
+```json
+{
+  "access_token": "string (JWT)",
+  "refresh_token": "string",
+  "token_type": "bearer",
+  "expires_in": 3600,
+  "user": {
+    "id": "UUID",
+    "full_name": "string",
+    "email": "string",
+    "roles": ["string"]
+  }
+}
+```
+
+##### `POST /api/v1/operator/auth/refresh`
+Refresh operator access token.
+
+**Request Body:**
+```json
+{
+  "refresh_token": "string"
+}
+```
+
+##### `GET /api/v1/operator/auth/me`
+Get current operator profile.
+
+**Headers:** `Authorization: Bearer <operator_access_token>`
+
+---
+
+#### Permission Registry
+
+##### `GET /api/v1/operator/permissions`
+List all system permissions grouped by module.
+
+**Headers:** `Authorization: Bearer <operator_access_token>`
+
+---
+
+#### Role Management
+
+##### `GET /api/v1/operator/roles`
+List all roles.
+
+##### `POST /api/v1/operator/roles`
+Create new role.
+
+**Request Body:**
+```json
+{
+  "name": "string",
+  "description": "string",
+  "is_system": false
+}
+```
+
+##### `PUT /api/v1/operator/roles/{id}`
+Update role.
+
+##### `POST /api/v1/operator/roles/{id}/assign-permissions`
+Assign permissions to role.
+
+**Request Body:**
+```json
+{
+  "permission_codes": ["sos.view", "cases.view"],
+  "replace_existing": false
+}
+```
+
+---
+
+#### Operator User Management
+
+##### `GET /api/v1/operator/users`
+List operator users.
+
+##### `POST /api/v1/operator/users`
+Create operator user.
+
+**Request Body:**
+```json
+{
+  "full_name": "string",
+  "email": "string",
+  "password": "string",
+  "phone": "string (optional)",
+  "is_active": true,
+  "is_super_admin": false
+}
+```
+
+##### `POST /api/v1/operator/users/{id}/assign-roles`
+Assign roles to user.
+
+##### `POST /api/v1/operator/users/{id}/assign-direct-permissions`
+Assign direct permission overrides to user.
+
+**Request Body:**
+```json
+{
+  "permissions": [
+    {"permission_code": "cases.view", "granted": true, "reason": "Direct case access"}
+  ],
+  "replace_existing": false
+}
+```
+
+---
+
+#### Current Session
+
+##### `GET /api/v1/operator/me/permissions`
+Get effective permissions for current operator.
+
+**Response:**
+```json
+{
+  "user_id": "UUID",
+  "permissions": ["sos.view", "cases.view", ...],
+  "role_permissions": [...],
+  "direct_grants": [...],
+  "direct_denies": [],
+  "cached": false,
+  "expires_at": "datetime"
+}
+```
+
+##### `GET /api/v1/operator/me/sidebar`
+Get dynamic sidebar menu based on permissions.
+
+---
+
+### Permission Codes Reference
+
+| Module | Permissions |
+|--------|-------------|
+| **SOS** | `sos.view`, `sos.respond`, `sos.assign`, `sos.escalate`, `sos.close` |
+| **Cases** | `cases.view`, `cases.create`, `cases.update`, `cases.resolve`, `cases.escalate`, `cases.delete`, `cases.assign` |
+| **Evidence** | `evidence.view`, `evidence.upload`, `evidence.download`, `evidence.delete`, `evidence.verify` |
+| **Users** | `users.view`, `users.create`, `users.update`, `users.delete`, `users.deactivate`, `users.view_analytics` |
+| **Roles** | `roles.view`, `roles.create`, `roles.update`, `roles.delete`, `roles.assign_permissions` |
+| **Operators** | `operators.view`, `operators.create`, `operators.update`, `operators.delete`, `operators.assign_roles`, `operators.assign_permissions`, `operators.deactivate`, `operators.toggle_super_admin` |
+| **Analytics** | `analytics.view`, `analytics.view_dashboard`, `analytics.export`, `analytics.view_sensitive` |
+| **Audit** | `audit_logs.view`, `audit_logs.view_sensitive` |
+| **Support Centers** | `support_centers.view`, `support_centers.create`, `support_centers.update`, `support_centers.delete`, `support_centers.verify`, `support_centers.manage_own` |
+| **Training** | `training.view`, `training.create`, `training.update`, `training.delete`, `training.manage_categories`, `training.publish` |
+| **Messages** | `messages.view_all`, `messages.respond`, `messages.moderate` |
+| **System** | `system.configure`, `system.view_settings`, `system.manage_integrations`, `system.backup_restore` |
+
+---
+
 ## Project Structure
 
 ```
@@ -966,6 +1152,13 @@ safenest-backend/
 │   │   └── v1/
 │   │       ├── endpoints/       # API routes
 │   │       └── router.py        # API router
+│   ├── admin_api/               # Operator RBAC admin endpoints
+│   │   ├── router.py            # /api/v1/operator routes
+│   │   ├── auth.py              # Operator login/refresh/me
+│   │   ├── permissions.py       # Permission registry
+│   │   ├── roles.py             # Role management
+│   │   ├── users.py             # Operator user management
+│   │   └── me.py                # Current operator session
 │   ├── core/
 │   │   ├── config.py            # Settings
 │   │   ├── logging.py           # Structured logging
@@ -973,10 +1166,19 @@ safenest-backend/
 │   ├── db/
 │   │   ├── database.py          # SQLAlchemy setup
 │   │   └── redis.py             # Redis client
-│   ├── models/                  # SQLAlchemy models
-│   ├── repositories/            # Data access layer
-│   ├── schemas/                 # Pydantic models
-│   ├── services/                # Business logic
+│   ├── models/                  # SQLAlchemy models (survivor app)
+│   ├── operator_models/         # SQLAlchemy models (operator RBAC)
+│   │   └── operator.py          # OperatorUser, Role, links, overrides
+│   ├── operator_schemas/        # Pydantic schemas (operator RBAC)
+│   ├── operator_repositories/   # Data access layer (operator RBAC)
+│   ├── operator_services/     # Business logic (operator RBAC)
+│   ├── operator_auth/           # Operator JWT auth dependencies
+│   ├── rbac/                    # Role-based access control
+│   │   ├── permission_enum.py   # PermissionEnum source of truth
+│   │   └── services/            # Permission resolver
+│   ├── repositories/            # Data access layer (survivor app)
+│   ├── schemas/                 # Pydantic models (survivor app)
+│   ├── services/                # Business logic (survivor app)
 │   ├── utils/                   # Utilities
 │   ├── websocket/               # WebSocket handlers
 │   └── workers/                 # Celery tasks
@@ -1003,18 +1205,83 @@ alembic upgrade head
 alembic downgrade -1
 ```
 
-### Docker
+### Docker (Recommended)
+
+When using Docker Compose, run migrations inside the container:
 
 ```bash
-# Run migrations
+# Run all migrations (including Operator RBAC)
 docker compose exec api alembic upgrade head
 
-# Create migration
+# Check migration status
+docker compose exec api alembic current
+
+# View migration history
+docker compose exec api alembic history
+
+# Create new migration
 docker compose exec api alembic revision --autogenerate -m "description"
 
-# Rollback
+# Rollback one revision
 docker compose exec api alembic downgrade -1
+
+# Rollback to specific revision
+docker compose exec api alembic downgrade <revision_id>
+
+# Reset all migrations (development only!)
+docker compose exec api alembic downgrade base
 ```
+
+### First-Time Setup: Operator RBAC System
+
+After running the migration, initialize the RBAC system:
+
+```bash
+# 1. Start containers
+docker compose up -d
+
+# 2. Apply migrations (includes operator_rbac migration)
+docker compose exec api alembic upgrade head
+
+# 3. Create first super admin (run Python inside container)
+docker compose exec api python -c "
+import asyncio
+from app.db.database import async_session_maker
+from app.operator_services.operator_user_service import operator_user_service
+from app.operator_schemas.operator_user import OperatorUserCreate
+
+async def create_admin():
+    async with async_session_maker() as db:
+        data = OperatorUserCreate(
+            full_name='System Administrator',
+            email='admin@safenest.org',
+            password='SecurePass123!',
+            phone='+1234567890',
+            is_active=True,
+            is_super_admin=True
+        )
+        user = await operator_user_service.create_user(db, data)
+        print(f'Created super admin: {user.id}')
+
+asyncio.run(create_admin())
+"
+
+# 4. Initialize system roles
+docker compose exec api python -c "
+import asyncio
+from app.db.database import async_session_maker
+from app.operator_services.role_service import role_service
+
+async def init_roles():
+    async with async_session_maker() as db:
+        await role_service.initialize_system_roles(db)
+        print('System roles initialized')
+
+asyncio.run(init_roles())
+"
+```
+
+**Important:** Change the default password immediately after first login!
 
 ## Testing
 
@@ -1039,6 +1306,8 @@ pytest --cov=app --cov-report=html
 - [ ] Configure rate limiting
 - [ ] Set up SSL/TLS
 - [ ] Run migrations
+- [ ] **Initialize operator RBAC system (see Database Migrations section)**
+- [ ] Create first super admin user
 - [ ] Configure backups
 
 ### Docker Production
@@ -1064,10 +1333,14 @@ docker compose up -d --scale celery-worker=4
    - API rate limiting
 
 3. **Authentication**
-   - Short-lived JWT tokens (60 min)
+   - Dual-domain JWT: survivor (mobile) + operator (web admin)
+   - Short-lived access tokens (60 min)
    - Refresh tokens (7 days)
-   - OTP expiry (5 min)
+   - OTP expiry (5 min) for survivors
+   - Password-based for operators
    - Anonymous session management
+   - Role-based access control (RBAC)
+   - Permission caching in Redis
 
 4. **Data Privacy**
    - PII minimization
