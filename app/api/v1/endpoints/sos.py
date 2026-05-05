@@ -101,7 +101,7 @@ async def get_active_sos(
     return None
 
 
-@router.patch("/{alert_id}/status", response_model=SOSResponse)
+@router.patch("/status/{alert_id}", response_model=SOSResponse)
 async def update_sos_status(
     alert_id: UUID,
     data: SOSStatusUpdate,

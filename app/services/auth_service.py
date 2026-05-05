@@ -41,7 +41,10 @@ class AuthService:
         security_logger.log_auth_attempt(phone, success=True, ip=ip, reason="otp_requested")
 
         # TODO: Send via SMS provider (Twilio, etc.)
-        # For development, return OTP (DO NOT DO THIS IN PRODUCTION)
+        # Print OTP to terminal for testing
+        print(f"[TEST OTP] Phone: {phone}, OTP: {otp}", flush=True)
+
+        # For development, return OTP in response (DO NOT DO THIS IN PRODUCTION)
         if settings.is_testing or settings.debug:
             return {
                 "message": "OTP sent successfully",

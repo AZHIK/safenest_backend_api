@@ -24,6 +24,14 @@ class OTPVerify(BaseModel):
     otp_code: str = Field(..., min_length=4, max_length=8, pattern=r"^\d+$")
     country_code: Optional[str] = Field(default=None)
 
+    @field_validator("phone_number")
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        digits = "".join(c for c in v if c.isdigit())
+        if len(digits) < 8:
+            raise ValueError("Phone number must have at least 8 digits")
+        return digits
+
 
 class TokenResponse(BaseModel):
     access_token: str
