@@ -31,6 +31,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ ./app/
 COPY alembic/ ./alembic/
 COPY alembic.ini .
+COPY scripts/start-api.sh ./scripts/start-api.sh
 
 # Create upload directories
 RUN mkdir -p /app/uploads/evidence /app/uploads/temp && chmod 755 /app/uploads
@@ -45,4 +46,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+CMD ["sh", "scripts/start-api.sh"]

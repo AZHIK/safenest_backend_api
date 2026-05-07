@@ -7,8 +7,18 @@ from app.models.messaging import Conversation, ConversationParticipant, Message
 from app.models.support import SupportCenter
 from app.models.training import TrainingCategory, TrainingLesson
 
+# Operator RBAC models (separate module)
+from app.operator_models.operator import (
+    OperatorUser,
+    Role,
+    RolePermissionLink,
+    UserRoleLink,
+    UserPermissionOverride,
+)
+
 __all__ = [
     "SQLModel",
+    # Survivor/Mobile models
     "User",
     "AnonymousSession",
     "TrustedContact",
@@ -23,4 +33,10 @@ __all__ = [
     "SupportCenter",
     "TrainingCategory",
     "TrainingLesson",
+    # Operator RBAC models
+    "OperatorUser",
+    "Role",
+    "RolePermissionLink",
+    "UserRoleLink",
+    "UserPermissionOverride",
 ]

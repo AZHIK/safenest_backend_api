@@ -58,7 +58,19 @@ cp .env.example .env
 
 2. **Run with Docker Compose:**
 ```bash
+# Build or rebuild after dependency changes
+docker compose build api celery-worker
+
 docker compose up -d
+
+# Run migrations
+docker compose exec api alembic upgrade head
+
+# Seed RBAC roles and permissions
+docker compose exec api python scripts/rbac_seed.py
+
+# Create first super admin
+docker compose exec api python scripts/create_admin.py
 ```
 
 3. **Or run locally:**
@@ -73,17 +85,14 @@ pip install -r requirements.txt
 # Run migrations
 alembic upgrade head
 
+# Seed RBAC roles and permissions
+python scripts/rbac_seed.py
+
+# Create first super admin
+python scripts/create_admin.py
+
 # Start server
 uvicorn app.main:app --reload
-```
-
-4. **Apply RBAC migrations (first time only):**
-```bash
-# Run all migrations including operator RBAC tables
-alembic upgrade head
-
-# Or using Docker:
-docker compose exec api alembic upgrade head
 ```
 
 ### Environment Variables
@@ -1231,57 +1240,6 @@ docker compose exec api alembic downgrade <revision_id>
 # Reset all migrations (development only!)
 docker compose exec api alembic downgrade base
 ```
-
-### First-Time Setup: Operator RBAC System
-
-After running the migration, initialize the RBAC system:
-
-```bash
-# 1. Start containers
-docker compose up -d
-
-# 2. Apply migrations (includes operator_rbac migration)
-docker compose exec api alembic upgrade head
-
-# 3. Create first super admin (run Python inside container)
-docker compose exec api python -c "
-import asyncio
-from app.db.database import async_session_maker
-from app.operator_services.operator_user_service import operator_user_service
-from app.operator_schemas.operator_user import OperatorUserCreate
-
-async def create_admin():
-    async with async_session_maker() as db:
-        data = OperatorUserCreate(
-            full_name='System Administrator',
-            email='admin@safenest.org',
-            password='SecurePass123!',
-            phone='+1234567890',
-            is_active=True,
-            is_super_admin=True
-        )
-        user = await operator_user_service.create_user(db, data)
-        print(f'Created super admin: {user.id}')
-
-asyncio.run(create_admin())
-"
-
-# 4. Initialize system roles
-docker compose exec api python -c "
-import asyncio
-from app.db.database import async_session_maker
-from app.operator_services.role_service import role_service
-
-async def init_roles():
-    async with async_session_maker() as db:
-        await role_service.initialize_system_roles(db)
-        print('System roles initialized')
-
-asyncio.run(init_roles())
-"
-```
-
-**Important:** Change the default password immediately after first login!
 
 ## Testing
 

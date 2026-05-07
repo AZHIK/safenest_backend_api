@@ -19,6 +19,11 @@ from app.models import (
     TrainingCategory, TrainingLesson,
 )
 
+# Import operator RBAC models
+from app.operator_models import (
+    OperatorUser, Role, RolePermissionLink, UserRoleLink, UserPermissionOverride,
+)
+
 settings = get_settings()
 config = context.config
 

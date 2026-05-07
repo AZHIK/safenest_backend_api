@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import auth, sos, reports, messaging, support, training, health
+from app.admin_api.router import operator_router
 
 api_router = APIRouter()
 
@@ -24,3 +25,6 @@ api_router.include_router(support.router, prefix="/support-centers", tags=["supp
 
 # Training
 api_router.include_router(training.router, prefix="/training", tags=["training"])
+
+# Operator RBAC Management (separate from survivor auth)
+api_router.include_router(operator_router, prefix="/operator", tags=["operator-rbac"])

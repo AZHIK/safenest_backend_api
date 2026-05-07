@@ -2,23 +2,39 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple
 
+import bcrypt
+from argon2 import PasswordHasher
+from argon2.exceptions import InvalidHashError, VerifyMismatchError, VerificationError
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from app.core.config import get_settings
 
 settings = get_settings()
 
-# Password hashing context (for future use if needed)
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+password_hasher = PasswordHasher()
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    if hashed_password.startswith("$argon2"):
+        try:
+            return password_hasher.verify(hashed_password, plain_password)
+        except (InvalidHashError, VerificationError, VerifyMismatchError):
+            return False
+
+    if hashed_password.startswith(("$2a$", "$2b$", "$2y$")):
+        try:
+            return bcrypt.checkpw(
+                plain_password.encode("utf-8"),
+                hashed_password.encode("utf-8"),
+            )
+        except ValueError:
+            return False
+
+    return False
 
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    return password_hasher.hash(password)
 
 
 def create_access_token(
