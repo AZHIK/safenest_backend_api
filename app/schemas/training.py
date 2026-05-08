@@ -60,6 +60,68 @@ class TrainingLessonDetail(TrainingLessonResponse):
     rating_count: int
 
 
+# --- Management Schemas ---
+
+class TrainingCategoryCreate(BaseModel):
+    name: str = Field(..., max_length=100)
+    slug: str = Field(..., max_length=100)
+    description: Optional[str] = None
+    icon_name: Optional[str] = Field(default=None, max_length=50)
+    color_code: Optional[str] = Field(default=None, max_length=7)
+    sort_order: int = 0
+    is_active: bool = True
+    is_featured: bool = False
+
+
+class TrainingCategoryUpdate(BaseModel):
+    name: Optional[str] = None
+    slug: Optional[str] = None
+    description: Optional[str] = None
+    icon_name: Optional[str] = None
+    color_code: Optional[str] = None
+    sort_order: Optional[int] = None
+    is_active: Optional[bool] = None
+    is_featured: Optional[bool] = None
+
+
+class TrainingLessonCreate(BaseModel):
+    category_id: UUID
+    title: str = Field(..., max_length=200)
+    slug: str = Field(..., max_length=200)
+    description: Optional[str] = None
+    content_blocks: Optional[List[ContentBlock]] = None
+    thumbnail_url: Optional[str] = Field(default=None, max_length=500)
+    video_url: Optional[str] = Field(default=None, max_length=500)
+    audio_url: Optional[str] = Field(default=None, max_length=500)
+    pdf_url: Optional[str] = Field(default=None, max_length=500)
+    duration_minutes: Optional[int] = None
+    difficulty_level: str = "beginner"
+    is_active: bool = True
+    is_premium: bool = False
+    requires_login: bool = False
+    sort_order: int = 0
+    tags: Optional[str] = None
+
+
+class TrainingLessonUpdate(BaseModel):
+    category_id: Optional[UUID] = None
+    title: Optional[str] = None
+    slug: Optional[str] = None
+    description: Optional[str] = None
+    content_blocks: Optional[List[ContentBlock]] = None
+    thumbnail_url: Optional[str] = None
+    video_url: Optional[str] = None
+    audio_url: Optional[str] = None
+    pdf_url: Optional[str] = None
+    duration_minutes: Optional[int] = None
+    difficulty_level: Optional[str] = None
+    is_active: Optional[bool] = None
+    is_premium: Optional[bool] = None
+    requires_login: Optional[bool] = None
+    sort_order: Optional[int] = None
+    tags: Optional[str] = None
+
+
 # Mapper functions for safe ORM -> Schema conversion
 # These must be called ONLY after all relationships are eagerly loaded
 

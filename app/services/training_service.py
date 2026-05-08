@@ -71,5 +71,65 @@ class TrainingService:
         """Get all active lessons. Returns ORM objects (caller must map to schema)."""
         return await training_lesson_repo.get_active(db, skip, limit)
 
+    # --- Management Methods ---
+
+    async def create_category(
+        self,
+        db: AsyncSession,
+        data: dict
+    ) -> TrainingCategory:
+        return await training_category_repo.create(db, data)
+
+    async def update_category(
+        self,
+        db: AsyncSession,
+        category_id: UUID,
+        data: dict
+    ) -> TrainingCategory:
+        category = await training_category_repo.get_by_id(db, category_id)
+        if not category:
+            raise ValueError("Category not found")
+        return await training_category_repo.update(db, category, data)
+
+    async def delete_category(
+        self,
+        db: AsyncSession,
+        category_id: UUID
+    ) -> bool:
+        return await training_category_repo.delete(db, category_id)
+
+    async def create_lesson(
+        self,
+        db: AsyncSession,
+        data: dict
+    ) -> TrainingLesson:
+        import json
+        if "content_blocks" in data and data["content_blocks"] is not None:
+            data["content_blocks"] = json.dumps([b.model_dump() if hasattr(b, "model_dump") else b for b in data["content_blocks"]])
+        return await training_lesson_repo.create(db, data)
+
+    async def update_lesson(
+        self,
+        db: AsyncSession,
+        lesson_id: UUID,
+        data: dict
+    ) -> TrainingLesson:
+        import json
+        lesson = await training_lesson_repo.get_by_id(db, lesson_id)
+        if not lesson:
+            raise ValueError("Lesson not found")
+        
+        if "content_blocks" in data and data["content_blocks"] is not None:
+            data["content_blocks"] = json.dumps([b.model_dump() if hasattr(b, "model_dump") else b for b in data["content_blocks"]])
+            
+        return await training_lesson_repo.update(db, lesson, data)
+
+    async def delete_lesson(
+        self,
+        db: AsyncSession,
+        lesson_id: UUID
+    ) -> bool:
+        return await training_lesson_repo.delete(db, lesson_id)
+
 
 training_service = TrainingService()
