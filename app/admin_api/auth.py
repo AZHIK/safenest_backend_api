@@ -8,7 +8,7 @@ Separate authentication system for institutional operators.
 - GET /api/v1/operator/auth/me
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
@@ -31,6 +31,15 @@ from app.operator_schemas.operator_user import OperatorUserCreate
 
 logger = get_logger(__name__)
 router = APIRouter()
+
+
+def _mask_email(email: str) -> str:
+    local, separator, domain = email.partition("@")
+    if not separator:
+        return "****"
+
+    visible = local[:2] if len(local) > 2 else local[:1]
+    return f"{visible}****@{domain}"
 
 
 def _to_me_response(user: OperatorUser) -> OperatorMeResponse:
@@ -98,6 +107,7 @@ async def register(
     status_code=status.HTTP_200_OK
 )
 async def login(
+    request: Request,
     data: OperatorLoginRequest,
     db: AsyncSession = Depends(get_db)
 ):
@@ -110,14 +120,35 @@ async def login(
     # Check rate limiting (simple implementation)
     # In production, use proper rate limiting middleware
     
-    token_response = await operator_auth_service.login(
-        db, data.email, data.password
-    )
+    client_host = request.client.host if request.client else None
+    masked_email = _mask_email(data.email)
+
+    try:
+        token_response = await operator_auth_service.login(
+            db, data.email, data.password
+        )
+    except Exception:
+        logger.exception(
+            "operator_login_error",
+            email=masked_email,
+            client_ip=client_host,
+            path=request.url.path,
+            method=request.method,
+        )
+        raise
     
     if not token_response:
         security_logger.log_suspicious_activity(
+            ip=client_host,
             activity="operator_login_failed",
-            details={"email": data.email}
+        )
+        logger.warning(
+            "operator_login_failed",
+            email=masked_email,
+            client_ip=client_host,
+            path=request.url.path,
+            method=request.method,
+            reason="invalid_credentials_or_account_state",
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

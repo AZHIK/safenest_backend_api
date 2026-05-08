@@ -39,6 +39,20 @@ class IncidentReportRepository(BaseRepository[IncidentReport]):
         )
         return result.scalars().all()
 
+    async def list_reports(
+        self,
+        db: AsyncSession,
+        skip: int = 0,
+        limit: int = 20,
+    ) -> List[IncidentReport]:
+        result = await db.execute(
+            select(IncidentReport)
+            .order_by(IncidentReport.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        return result.scalars().all()
+
     async def get_by_id_with_evidence(
         self,
         db: AsyncSession,

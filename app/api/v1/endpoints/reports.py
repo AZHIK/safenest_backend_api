@@ -24,6 +24,7 @@ settings = get_settings()
 router = APIRouter()
 
 
+@router.post("", response_model=IncidentReportResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/create", response_model=IncidentReportResponse, status_code=status.HTTP_201_CREATED)
 async def create_report(
     data: IncidentReportCreate,
@@ -47,6 +48,7 @@ async def create_report(
         )
 
 
+@router.get("", response_model=List[IncidentReportResponse])
 @router.get("/my-reports", response_model=List[IncidentReportResponse])
 async def get_my_reports(
     skip: int = 0,

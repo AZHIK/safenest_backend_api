@@ -16,6 +16,7 @@ api_router.include_router(sos.router, prefix="/sos", tags=["sos"])
 
 # Incident Reporting
 api_router.include_router(reports.router, prefix="/reports", tags=["reports"])
+api_router.include_router(reports.router, prefix="/incident-reports", tags=["incident-reports"])
 
 # Messaging
 api_router.include_router(messaging.router, prefix="/messages", tags=["messages"])

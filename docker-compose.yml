@@ -16,7 +16,9 @@ services:
       - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/2}
       - OTP_EXPIRY_MINUTES=${OTP_EXPIRY_MINUTES:-5}
       - ENVIRONMENT=${ENVIRONMENT:-production}
+      - DEBUG=${DEBUG:-false}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
     depends_on:
       db:
         condition: service_healthy

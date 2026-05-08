@@ -76,6 +76,26 @@ def create_application() -> FastAPI:
         expose_headers=["X-Request-ID"],
     )
 
+    @app.middleware("http")
+    async def log_operator_login_preflight_errors(request, call_next):
+        response = await call_next(request)
+
+        if (
+            request.method == "OPTIONS"
+            and request.url.path == "/api/v1/operator/auth/login"
+            and response.status_code >= 400
+        ):
+            logger.warning(
+                "operator_login_preflight_failed",
+                status_code=response.status_code,
+                origin=request.headers.get("origin"),
+                requested_method=request.headers.get("access-control-request-method"),
+                requested_headers=request.headers.get("access-control-request-headers"),
+                allowed_origins=settings.cors_origins,
+            )
+
+        return response
+
     # GZip compression
     app.add_middleware(GZipMiddleware, minimum_size=1000)
 

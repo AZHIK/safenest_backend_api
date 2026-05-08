@@ -202,10 +202,10 @@ class OperatorAuthService:
             )
             
             # Revoke old refresh token
-            await redis.delete(f"operator:refresh:{jti}")
+            await redis_client.client.delete(f"operator:refresh:{jti}")
             
             # Store new refresh token
-            await redis.setex(
+            await redis_client.client.setex(
                 f"operator:refresh:{new_refresh_jti}",
                 int(timedelta(days=OPERATOR_REFRESH_TOKEN_EXPIRE_DAYS).total_seconds()),
                 str(user.id)

@@ -14,6 +14,7 @@ class SOSStatus(str, Enum):
     RESOLVED = "resolved"
     CANCELLED = "cancelled"
     ESCALATED = "escalated"
+    ASSIGNED = "assigned"
 
 
 class SOSAlert(SQLModel, table=True):
@@ -42,9 +43,11 @@ class SOSAlert(SQLModel, table=True):
     contacts_notified: int = Field(default=0)
     centers_notified: list = Field(default_factory=list, sa_column=Column(JSON))  # List of support center IDs notified
 
-    # Resolution
+    # Assignment & Resolution (Institutional Operators)
+    assigned_to: Optional[uuid.UUID] = Field(default=None, sa_column=Column(ForeignKey("operator_users.id", ondelete="SET NULL")))
+    assigned_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime(timezone=True)))
     resolved_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime(timezone=True)))
-    resolved_by: Optional[uuid.UUID] = Field(default=None, sa_column=Column(ForeignKey("users.id", ondelete="SET NULL")))
+    resolved_by: Optional[uuid.UUID] = Field(default=None, sa_column=Column(ForeignKey("operator_users.id", ondelete="SET NULL")))
     resolution_notes: Optional[str] = Field(default=None, sa_column=Column(Text))
 
     created_at: datetime = Field(default=None, sa_column=Column(DateTime(timezone=True), server_default=func.now(), index=True))

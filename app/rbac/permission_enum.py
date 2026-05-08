@@ -27,6 +27,7 @@ class PermissionEnum(str, Enum):
     SOS_CLOSE = "sos.close"
     SOS_DELETE = "sos.delete"
     SOS_EXPORT = "sos.export"
+    SOS_MANAGE = "sos.manage"
 
     # ==================== CASES / INCIDENT REPORTS ====================
     CASES_VIEW = "cases.view"

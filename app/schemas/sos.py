@@ -1,10 +1,11 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.common import LocationBase, OfflineSyncMixin
+from app.schemas.auth import UserResponse, to_user_response
 
 
 class SOSCreate(BaseModel):
@@ -26,8 +27,9 @@ class SOSCreate(BaseModel):
 
 
 class SOSStatusUpdate(BaseModel):
-    status: str  # resolved, cancelled
+    status: str  # active, assigned, escalated, resolved, cancelled
     resolution_notes: Optional[str] = Field(default=None, max_length=1000)
+    assigned_responder_id: Optional[UUID] = None
 
 
 class SOSResponse(BaseModel):
@@ -48,6 +50,8 @@ class SOSResponse(BaseModel):
     updated_at: Optional[datetime]
     client_created_at: Optional[datetime]
     offline_id: Optional[str]
+    assigned_to: Optional[UUID] = None
+    assigned_at: Optional[datetime] = None
 
 
 class LocationPingCreate(BaseModel):
@@ -79,6 +83,10 @@ class LocationPingResponse(BaseModel):
 
 class SOSWithLocationsResponse(SOSResponse):
     recent_locations: list[LocationPingResponse] = []
+
+
+class SOSMonitorResponse(SOSWithLocationsResponse):
+    user: Optional[UserResponse] = None
 
 
 # Mapper functions for safe ORM -> Schema conversion
@@ -114,30 +122,28 @@ def to_sos_response(alert) -> SOSResponse:
         created_at=alert.created_at,
         updated_at=alert.updated_at,
         client_created_at=alert.client_created_at,
-        offline_id=alert.offline_id
+        offline_id=alert.offline_id,
+        assigned_to=alert.assigned_to,
+        assigned_at=alert.assigned_at
     )
 
 
 def to_sos_with_locations_response(alert) -> SOSWithLocationsResponse:
     """Convert SOSAlert ORM with location_pings to response schema."""
+    base = to_sos_response(alert)
     return SOSWithLocationsResponse(
-        id=alert.id,
-        user_id=alert.user_id,
-        status=alert.status,
-        alert_type=alert.alert_type,
-        severity=alert.severity,
-        initial_latitude=alert.initial_latitude,
-        initial_longitude=alert.initial_longitude,
-        initial_accuracy=alert.initial_accuracy,
-        initial_address=alert.initial_address,
-        message=alert.message,
-        contacts_notified=alert.contacts_notified,
-        created_at=alert.created_at,
-        updated_at=alert.updated_at,
-        client_created_at=alert.client_created_at,
-        offline_id=alert.offline_id,
+        **base.model_dump(),
         recent_locations=[
             to_location_ping_response(p)
             for p in (getattr(alert, 'location_pings', None) or [])
         ]
+    )
+
+
+def to_sos_monitor_response(alert) -> SOSMonitorResponse:
+    """Convert SOSAlert ORM with user and locations to monitor response schema."""
+    with_locations = to_sos_with_locations_response(alert)
+    return SOSMonitorResponse(
+        **with_locations.model_dump(),
+        user=to_user_response(alert.user) if getattr(alert, 'user', None) else None
     )

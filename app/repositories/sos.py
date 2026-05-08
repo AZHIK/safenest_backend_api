@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.sos import SOSAlert, LocationPing, SOSStatus
+from app.models.user import User
 from app.repositories.base import BaseRepository
 
 
@@ -23,7 +24,7 @@ class SOSAlertRepository(BaseRepository[SOSAlert]):
             select(SOSAlert)
             .where(
                 SOSAlert.user_id == user_id,
-                SOSAlert.status.in_([SOSStatus.ACTIVE, SOSStatus.ESCALATED])
+                SOSAlert.status.in_([SOSStatus.ACTIVE, SOSStatus.ASSIGNED, SOSStatus.ESCALATED])
             )
             .order_by(SOSAlert.created_at.desc())
         )
@@ -36,11 +37,45 @@ class SOSAlertRepository(BaseRepository[SOSAlert]):
     ) -> List[SOSAlert]:
         result = await db.execute(
             select(SOSAlert)
-            .where(SOSAlert.status.in_([SOSStatus.ACTIVE, SOSStatus.ESCALATED]))
+            .where(SOSAlert.status.in_([SOSStatus.ACTIVE, SOSStatus.ASSIGNED, SOSStatus.ESCALATED]))
             .order_by(SOSAlert.created_at.desc())
             .limit(limit)
         )
         return result.scalars().all()
+
+    async def get_monitor_alerts(
+        self,
+        db: AsyncSession,
+        limit: int = 100
+    ) -> List[SOSAlert]:
+        result = await db.execute(
+            select(SOSAlert)
+            .options(
+                selectinload(SOSAlert.user).selectinload(User.trusted_contacts),
+                selectinload(SOSAlert.location_pings)
+            )
+            .where(
+                SOSAlert.status.in_([
+                    SOSStatus.ACTIVE,
+                    SOSStatus.ASSIGNED,
+                    SOSStatus.ESCALATED
+                ]) | (
+                    (SOSAlert.status == SOSStatus.RESOLVED) &
+                    (SOSAlert.created_at >= datetime.now(timezone.utc) - timedelta(hours=24))
+                )
+            )
+            .order_by(SOSAlert.created_at.desc())
+            .limit(limit)
+        )
+        alerts = result.scalars().all()
+        for alert in alerts:
+            if alert.location_pings:
+                alert.location_pings = sorted(
+                    alert.location_pings,
+                    key=lambda x: x.recorded_at,
+                    reverse=True
+                )[:10]  # Only need recent ones for monitor
+        return alerts
 
     async def get_by_id_with_locations(
         self,
@@ -52,6 +87,29 @@ class SOSAlertRepository(BaseRepository[SOSAlert]):
             select(SOSAlert)
             .options(
                 selectinload(SOSAlert.location_pings.and_(LocationPing.id != None))
+            )
+            .where(SOSAlert.id == alert_id)
+        )
+        alert = result.scalar_one_or_none()
+        if alert and alert.location_pings:
+            alert.location_pings = sorted(
+                alert.location_pings,
+                key=lambda x: x.recorded_at,
+                reverse=True
+            )[:location_limit]
+        return alert
+
+    async def get_monitor_alert_by_id(
+        self,
+        db: AsyncSession,
+        alert_id: UUID,
+        location_limit: int = 10
+    ) -> Optional[SOSAlert]:
+        result = await db.execute(
+            select(SOSAlert)
+            .options(
+                selectinload(SOSAlert.user).selectinload(User.trusted_contacts),
+                selectinload(SOSAlert.location_pings)
             )
             .where(SOSAlert.id == alert_id)
         )
@@ -83,11 +141,19 @@ class SOSAlertRepository(BaseRepository[SOSAlert]):
         db: AsyncSession,
         alert_id: UUID,
         status: str,
-        resolution_notes: Optional[str] = None
+        resolution_notes: Optional[str] = None,
+        assigned_to: Optional[UUID] = None
     ) -> None:
         values = {"status": status}
+        if status == SOSStatus.ASSIGNED and assigned_to:
+            values["assigned_to"] = assigned_to
+            values["assigned_at"] = datetime.now(timezone.utc)
+        
         if status in [SOSStatus.RESOLVED, SOSStatus.CANCELLED]:
             values["resolved_at"] = datetime.now(timezone.utc)
+            if assigned_to:
+                values["resolved_by"] = assigned_to
+        
         if resolution_notes:
             values["resolution_notes"] = resolution_notes
 

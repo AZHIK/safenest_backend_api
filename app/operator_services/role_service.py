@@ -22,6 +22,9 @@ logger = get_logger(__name__)
 class RoleService:
     """Role management business logic."""
 
+    def __init__(self):
+        self._role_repo = role_repo
+
     async def create_role(
         self,
         db: AsyncSession,
