@@ -55,5 +55,42 @@ class SupportService:
         """Get verified centers. Returns ORM objects (caller must map to schema)."""
         return await support_center_repo.get_verified(db, limit)
 
+    # --- Management Methods ---
+
+    async def get_all_centers(
+        self,
+        db: AsyncSession,
+        skip: int = 0,
+        limit: int = 100
+    ) -> List[SupportCenter]:
+        """Get all centers for admin management."""
+        return await support_center_repo.get_all(db, skip, limit)
+
+    async def create_center(
+        self,
+        db: AsyncSession,
+        data: dict
+    ) -> SupportCenter:
+        # If geo_location is needed, it would be handled here or in repo
+        return await support_center_repo.create(db, data)
+
+    async def update_center(
+        self,
+        db: AsyncSession,
+        center_id: UUID,
+        data: dict
+    ) -> SupportCenter:
+        center = await support_center_repo.get_by_id(db, center_id)
+        if not center:
+            raise ValueError("Support center not found")
+        return await support_center_repo.update(db, center, data)
+
+    async def delete_center(
+        self,
+        db: AsyncSession,
+        center_id: UUID
+    ) -> bool:
+        return await support_center_repo.delete(db, center_id)
+
 
 support_service = SupportService()
