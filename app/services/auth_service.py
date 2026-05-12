@@ -29,8 +29,15 @@ class AuthService:
         self.otp_expiry = settings.otp_expiry_minutes
 
     async def request_otp(self, db: AsyncSession, data: OTPRequest, ip: str = None) -> dict:
-        phone = f"{data.country_code}{data.phone_number}"
+        # data.phone_number is already cleaned to 9 digits by the schema validator
+        cc = (data.country_code or "+255").strip()
+        if not cc.startswith("+"):
+            cc = f"+{cc}"
+        
+        phone = f"{cc}{data.phone_number}"
 
+        # Always require OTP verification for security (WhatsApp-style authentication)
+        # Even for existing users, OTP must be verified on each login attempt
         # Generate OTP
         otp = generate_otp(settings.otp_length)
 
@@ -65,7 +72,11 @@ class AuthService:
         user_agent: str = None
     ) -> Tuple[str, str, int, User]:
         """Verify OTP and return (access_token, refresh_token, expires_in, user_orm)."""
-        phone = f"{data.country_code or '+1'}{data.phone_number}"
+        cc = (data.country_code or "+255").strip()
+        if not cc.startswith("+"):
+            cc = f"+{cc}"
+            
+        phone = f"{cc}{data.phone_number}"
 
         # Verify OTP
         verified = await otp_storage.verify(phone, data.otp_code)
@@ -78,7 +89,7 @@ class AuthService:
         is_new_user = False
 
         if not user:
-            user = await self._create_verified_user(db, phone, data.country_code or '+1')
+            user = await self._create_verified_user(db, phone, data.country_code or '+255')
             is_new_user = True
         else:
             if not user.is_verified:

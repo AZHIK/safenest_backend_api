@@ -9,7 +9,8 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator
+from app.utils.validators import clean_tanzania_phone
 
 
 class OperatorLoginRequest(BaseModel):
@@ -25,6 +26,13 @@ class OperatorRegisterRequest(BaseModel):
     password: str = Field(..., min_length=12, description="Operator password")
     phone: Optional[str] = Field(None, max_length=20)
     organization: Optional[str] = Field(None, max_length=100)
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: Optional[str]) -> Optional[str]:
+        if v:
+            return clean_tanzania_phone(v)
+        return v
 
 
 class OperatorTokenResponse(BaseModel):

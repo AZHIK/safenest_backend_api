@@ -27,8 +27,11 @@ class SupportCenterRepository(BaseRepository[SupportCenter]):
         limit: int = 50
     ) -> List[SupportCenter]:
         # Use simple bounding box for now - production should use PostGIS
+        import math
         lat_delta = radius_km / 111.0
-        lng_delta = radius_km / (111.0 * max(abs(lat), 0.01))
+        lat_rad = math.radians(lat)
+        cos_lat = max(math.cos(lat_rad), 0.01)
+        lng_delta = radius_km / (111.0 * cos_lat)
 
         query = select(SupportCenter).where(
             SupportCenter.is_active == True,
@@ -53,7 +56,7 @@ class SupportCenterRepository(BaseRepository[SupportCenter]):
 
         # Calculate and attach distance
         for center in centers:
-            center.distance_km = self._haversine_distance(lat, lng, center.latitude, center.longitude)
+            object.__setattr__(center, 'distance_km', self._haversine_distance(lat, lng, center.latitude, center.longitude))
 
         # Sort by distance
         return sorted(centers, key=lambda c: c.distance_km)[:limit]

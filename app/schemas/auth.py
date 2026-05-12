@@ -4,33 +4,28 @@ from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from app.utils.validators import clean_tanzania_phone
 
 
 class OTPRequest(BaseModel):
-    phone_number: str = Field(..., min_length=10, max_length=20)
-    country_code: str = Field(default="+1", pattern=r"^\+[1-9]\d{0,3}$")
+    phone_number: str = Field(..., min_length=9, max_length=20)
+    country_code: str = Field(default="+255", pattern=r"^\+255$")
 
     @field_validator("phone_number")
     @classmethod
     def validate_phone(cls, v: str) -> str:
-        digits = "".join(c for c in v if c.isdigit())
-        if len(digits) < 8:
-            raise ValueError("Phone number must have at least 8 digits")
-        return digits
+        return clean_tanzania_phone(v)
 
 
 class OTPVerify(BaseModel):
-    phone_number: str = Field(..., min_length=10, max_length=20)
+    phone_number: str = Field(..., min_length=9, max_length=20)
     otp_code: str = Field(..., min_length=4, max_length=8, pattern=r"^\d+$")
-    country_code: Optional[str] = Field(default=None)
+    country_code: str = Field(default="+255", pattern=r"^\+255$")
 
     @field_validator("phone_number")
     @classmethod
     def validate_phone(cls, v: str) -> str:
-        digits = "".join(c for c in v if c.isdigit())
-        if len(digits) < 8:
-            raise ValueError("Phone number must have at least 8 digits")
-        return digits
+        return clean_tanzania_phone(v)
 
 
 class TokenResponse(BaseModel):
@@ -54,11 +49,16 @@ class AnonymousSessionResponse(BaseModel):
 
 class TrustedContactBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
-    phone_number: str = Field(..., min_length=8, max_length=20)
+    phone_number: str = Field(..., min_length=9, max_length=20)
     relationship: Optional[str] = Field(default=None, max_length=50)
     priority: int = Field(default=1, ge=1, le=5)
     notify_sms: bool = True
     notify_push: bool = True
+
+    @field_validator("phone_number")
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        return clean_tanzania_phone(v)
 
 
 class TrustedContactCreate(TrustedContactBase):

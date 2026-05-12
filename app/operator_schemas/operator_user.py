@@ -6,7 +6,8 @@ from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from app.utils.validators import clean_tanzania_phone
 
 
 class OperatorUserCreate(BaseModel):
@@ -19,6 +20,13 @@ class OperatorUserCreate(BaseModel):
     is_super_admin: bool = Field(default=False)
     role_ids: List[UUID] = Field(default_factory=list, description="Initial role assignments")
 
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: Optional[str]) -> Optional[str]:
+        if v:
+            return clean_tanzania_phone(v)
+        return v
+
 
 class OperatorUserUpdate(BaseModel):
     """Update operator user."""
@@ -26,6 +34,13 @@ class OperatorUserUpdate(BaseModel):
     phone: Optional[str] = Field(default=None, max_length=30)
     is_active: Optional[bool] = None
     # Note: is_super_admin changes should be done via dedicated endpoint for audit
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: Optional[str]) -> Optional[str]:
+        if v:
+            return clean_tanzania_phone(v)
+        return v
 
 
 class OperatorUserStatusUpdate(BaseModel):

@@ -50,6 +50,8 @@ async def verify_otp(
     client_ip = request.client.host if request.client else None
     user_agent = request.headers.get("user-agent")
 
+    print(f"[DEBUG VERIFY] Payload received: phone_number={data.phone_number}, otp_code='{data.otp_code}', country_code={data.country_code}", flush=True)
+
     try:
         access_token, refresh_token, expires_in, user = await auth_service.verify_otp(
             db, data, ip=client_ip, user_agent=user_agent
