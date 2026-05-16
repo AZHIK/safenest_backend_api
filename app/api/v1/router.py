@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import auth, sos, reports, messaging, support, training, health
+from app.api.v1.endpoints import auth, sos, reports, messaging, support, training, health, evidence
 from app.admin_api.router import operator_router
 
 api_router = APIRouter()
@@ -17,6 +17,9 @@ api_router.include_router(sos.router, prefix="/sos", tags=["sos"])
 # Incident Reporting
 api_router.include_router(reports.router, prefix="/reports", tags=["reports"])
 api_router.include_router(reports.router, prefix="/incident-reports", tags=["incident-reports"])
+
+# Evidence Files
+api_router.include_router(evidence.router, prefix="/evidence", tags=["evidence"])
 
 # Messaging
 api_router.include_router(messaging.router, prefix="/messages", tags=["messages"])
