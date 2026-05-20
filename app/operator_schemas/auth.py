@@ -42,6 +42,7 @@ class OperatorTokenResponse(BaseModel):
     token_type: str = Field(default="bearer", description="Token type")
     expires_in: int = Field(..., description="Access token expiry in seconds")
     refresh_expires_in: int = Field(..., description="Refresh token expiry in seconds")
+    setup_completed: bool = Field(default=False, description="Whether the operator has completed setup")
 
 
 class OperatorTokenRefreshRequest(BaseModel):
@@ -62,6 +63,7 @@ class OperatorMeResponse(BaseModel):
     email_verified: bool
     last_login: Optional[datetime]
     created_at: datetime
+    setup_completed: bool
 
     # Computed fields
     roles: list[str] = Field(default_factory=list, description="Assigned role names")

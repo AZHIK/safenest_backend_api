@@ -58,6 +58,7 @@ def _to_me_response(user: OperatorUser) -> OperatorMeResponse:
         email_verified=user.email_verified,
         last_login=user.last_login,
         created_at=user.created_at,
+        setup_completed=user.setup_completed,
         roles=role_names
     )
 

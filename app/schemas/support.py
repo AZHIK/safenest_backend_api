@@ -57,6 +57,7 @@ class SupportCenterResponse(BaseModel):
     rating_count: int
 
     is_active: bool
+    operator_id: Optional[UUID] = None
 
 
 # --- Management Schemas ---
@@ -156,5 +157,6 @@ def to_support_center_response(center) -> SupportCenterResponse:
         is_verified=center.is_verified,
         rating_average=center.rating_average,
         rating_count=center.rating_count,
-        is_active=center.is_active
+        is_active=center.is_active,
+        operator_id=center.operator_id
     )

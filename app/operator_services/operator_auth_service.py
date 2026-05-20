@@ -148,7 +148,8 @@ class OperatorAuthService:
             refresh_token=refresh_token,
             token_type="bearer",
             expires_in=int(timedelta(minutes=OPERATOR_ACCESS_TOKEN_EXPIRE_MINUTES).total_seconds()),
-            refresh_expires_in=int(timedelta(days=OPERATOR_REFRESH_TOKEN_EXPIRE_DAYS).total_seconds())
+            refresh_expires_in=int(timedelta(days=OPERATOR_REFRESH_TOKEN_EXPIRE_DAYS).total_seconds()),
+            setup_completed=user.setup_completed
         )
 
     async def refresh_token(
@@ -221,7 +222,8 @@ class OperatorAuthService:
                 refresh_token=new_refresh_token,
                 token_type="bearer",
                 expires_in=int(timedelta(minutes=OPERATOR_ACCESS_TOKEN_EXPIRE_MINUTES).total_seconds()),
-                refresh_expires_in=int(timedelta(days=OPERATOR_REFRESH_TOKEN_EXPIRE_DAYS).total_seconds())
+                refresh_expires_in=int(timedelta(days=OPERATOR_REFRESH_TOKEN_EXPIRE_DAYS).total_seconds()),
+                setup_completed=user.setup_completed
             )
             
         except JWTError as e:

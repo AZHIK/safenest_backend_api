@@ -82,6 +82,9 @@ class SupportCenter(SQLModel, table=True):
     updated_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime(timezone=True), onupdate=func.now()))
     last_verified_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime(timezone=True)))
 
+    # Ownership
+    operator_id: Optional[uuid.UUID] = Field(default=None, foreign_key="operator_users.id", index=True)
+
     def __repr__(self):
         return f"<SupportCenter(id={self.id}, name={self.name}, type={self.center_type})>"
 

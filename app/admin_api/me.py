@@ -19,6 +19,15 @@ from app.operator_schemas.permission import (
     MenuItem,
 )
 from app.rbac.services.permission_resolver_service import permission_resolver
+from app.schemas.support import (
+    SupportCenterResponse,
+    SupportCenterCreate,
+    SupportCenterUpdate,
+    to_support_center_response
+)
+from app.repositories.support import support_center_repo
+from app.models.support import SupportCenter
+from app.operator_repositories.operator_user import operator_user_repo
 
 router = APIRouter()
 
@@ -268,3 +277,59 @@ async def get_my_sidebar(
             "is_super_admin": str(current_user.is_super_admin)
         }
     )
+
+
+@router.get(
+    "/support-center",
+    response_model=SupportCenterResponse,
+    status_code=status.HTTP_200_OK
+)
+async def get_my_support_center(
+    db: AsyncSession = Depends(get_db),
+    current_user: OperatorUser = Depends(get_current_operator)
+):
+    """Get the support center linked to the current operator."""
+    center = await support_center_repo.get_by_operator_id(db, current_user.id)
+    if not center:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No support center linked to this operator"
+        )
+    return to_support_center_response(center)
+
+
+@router.post(
+    "/support-center",
+    response_model=SupportCenterResponse,
+    status_code=status.HTTP_200_OK
+)
+async def setup_my_support_center(
+    data: SupportCenterCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: OperatorUser = Depends(get_current_operator)
+):
+    """Create or update the support center for the current operator."""
+    existing_center = await support_center_repo.get_by_operator_id(db, current_user.id)
+    
+    if existing_center:
+        # Update existing
+        update_dict = data.model_dump(exclude_unset=True)
+        for key, value in update_dict.items():
+            setattr(existing_center, key, value)
+        center = existing_center
+    else:
+        # Create new
+        center = SupportCenter(**data.model_dump())
+        center.operator_id = current_user.id
+        db.add(center)
+    
+    # Mark setup as completed
+    if not current_user.setup_completed:
+        current_user.setup_completed = True
+        # We need to update via repo to ensure it persists if session flush happens
+        await operator_user_repo.update(db, db_obj=current_user, obj_in={"setup_completed": True})
+
+    await db.commit()
+    await db.refresh(center)
+    
+    return to_support_center_response(center)

@@ -126,7 +126,10 @@ class OperatorUser(SQLModel, table=True):
     
     # JWT tracking
     current_jti: Optional[str] = Field(default=None, max_length=255)
-    
+
+    # Setup status
+    setup_completed: bool = Field(default=False, index=True)
+
     # Timestamps
     created_at: datetime = Field(
         default=None,

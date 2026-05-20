@@ -94,6 +94,17 @@ class SupportCenterRepository(BaseRepository[SupportCenter]):
         )
         return result.scalars().all()
 
+    async def get_by_operator_id(
+        self,
+        db: AsyncSession,
+        operator_id: UUID
+    ) -> Optional[SupportCenter]:
+        """Get support center linked to an operator."""
+        result = await db.execute(
+            select(SupportCenter).where(SupportCenter.operator_id == operator_id)
+        )
+        return result.scalar_one_or_none()
+
     @staticmethod
     def _haversine_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
         """Calculate the great circle distance between two points in km."""
