@@ -69,13 +69,15 @@ class SecurityLogger:
             size_bytes=size
         )
 
-    def log_suspicious_activity(self, user_id: str = None, ip: str = None, activity: str = None):
-        self.logger.warning(
-            "suspicious_activity",
-            user_id=user_id,
-            ip=ip,
-            activity=activity
-        )
+    def log_suspicious_activity(self, user_id: str = None, ip: str = None, activity: str = None, details: dict = None):
+        extra = {
+            "user_id": user_id,
+            "ip": ip,
+            "activity": activity,
+        }
+        if details:
+            extra["details"] = details
+        self.logger.warning("suspicious_activity", **extra)
 
 
 security_logger = SecurityLogger()

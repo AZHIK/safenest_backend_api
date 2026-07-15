@@ -6,7 +6,7 @@ Combines all operator management endpoints under /api/v1/operator prefix.
 
 from fastapi import APIRouter
 
-from app.admin_api import auth, permissions, reports, roles, users, me, sos_monitor, training, support, dashboard, mobile_users
+from app.admin_api import auth, permissions, reports, roles, users, me, sos_monitor, training, support, dashboard, mobile_users, messaging
 
 # Main router for /api/v1/operator prefix
 operator_router = APIRouter()
@@ -86,4 +86,11 @@ operator_router.include_router(
     support.router,
     prefix="/support-centers",
     tags=["operator-support-centers"]
+)
+
+# Messaging management: /api/v1/operator/messaging
+operator_router.include_router(
+    messaging.router,
+    prefix="/messaging",
+    tags=["operator-messaging"]
 )

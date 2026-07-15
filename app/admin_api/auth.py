@@ -8,6 +8,8 @@ Separate authentication system for institutional operators.
 - GET /api/v1/operator/auth/me
 """
 
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,6 +18,7 @@ from app.core.logging import security_logger, get_logger
 from app.operator_auth import get_current_operator, get_optional_operator
 from app.operator_models.operator import OperatorUser
 from app.operator_repositories.operator_user import operator_user_repo
+from app.operator_repositories.role import role_repo
 from app.operator_schemas.auth import (
     OperatorLoginRequest,
     OperatorRegisterRequest,
@@ -63,6 +66,13 @@ def _to_me_response(user: OperatorUser) -> OperatorMeResponse:
     )
 
 
+# Map frontend role names to backend system role names
+ROLE_NAME_MAP = {
+    "police": "police_officer",
+    "help_center": "help_center_staff",
+}
+
+
 @router.post(
     "/register",
     status_code=status.HTTP_201_CREATED
@@ -74,31 +84,47 @@ async def register(
     """
     Self-registration endpoint for operators.
     
-    Creates a new operator account. In production, this account 
-    would need verification/approval before full access.
+    Creates a new operator account with the selected role assigned.
     """
-    # Convert RegisterRequest to UserCreate
+    role_ids: list[UUID] = []
+    role_name = data.role.lower() if data.role else None
+
+    if role_name:
+        # Map to backend system role name if needed
+        backend_role_name = ROLE_NAME_MAP.get(role_name, role_name)
+        role = await role_repo.get_by_name(db, backend_role_name)
+        if role:
+            role_ids = [role.id]
+        else:
+            logger.warning(
+                "registration_role_not_found",
+                role_name=role_name,
+                backend_role_name=backend_role_name,
+            )
+
     user_create = OperatorUserCreate(
         full_name=data.full_name,
         email=data.email,
         password=data.password,
         phone=data.phone,
-        is_active=True,  # Default to active for now
+        is_active=True,
         is_super_admin=False,
-        role_ids=[]
+        role_ids=role_ids,
     )
-    
+
     user, message = await operator_user_service.create_user(db, user_create)
-    
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=message
         )
-    
+
+    assigned_role = role_name or "none"
     return {
-        "message": "Operator registered successfully. Please contact an administrator to assign roles.",
-        "user_id": str(user.id)
+        "message": f"Operator registered successfully with role: {assigned_role}",
+        "user_id": str(user.id),
+        "role": assigned_role,
     }
 
 

@@ -68,7 +68,8 @@ class ConversationParticipant(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     conversation_id: uuid.UUID = Field(sa_column=Column(ForeignKey("conversations.id", ondelete="CASCADE"), index=True))
-    user_id: uuid.UUID = Field(sa_column=Column(ForeignKey("users.id", ondelete="CASCADE"), index=True))
+    user_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column(ForeignKey("users.id", ondelete="CASCADE"), index=True))
+    operator_user_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column(ForeignKey("operator_users.id", ondelete="CASCADE"), index=True))
 
     # Role
     role: str = Field(default="member", max_length=20)  # member, admin, support_agent
@@ -111,6 +112,7 @@ class Message(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     conversation_id: uuid.UUID = Field(sa_column=Column(ForeignKey("conversations.id", ondelete="CASCADE"), index=True))
     sender_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column(ForeignKey("users.id", ondelete="SET NULL"), index=True))
+    sender_operator_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column(ForeignKey("operator_users.id", ondelete="SET NULL"), index=True))
 
     # Reply threading
     reply_to_message_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column(ForeignKey("messages.id", ondelete="SET NULL")))

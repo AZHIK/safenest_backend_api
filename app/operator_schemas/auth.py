@@ -26,6 +26,7 @@ class OperatorRegisterRequest(BaseModel):
     password: str = Field(..., min_length=12, description="Operator password")
     phone: Optional[str] = Field(None, max_length=20)
     organization: Optional[str] = Field(None, max_length=100)
+    role: Optional[str] = Field(None, description="Role name to assign (e.g. police, help_center)")
 
     @field_validator("phone")
     @classmethod

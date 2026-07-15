@@ -11,6 +11,7 @@ from app.repositories.messaging import (
     message_repo,
     participant_repo,
 )
+from app.repositories.support import support_center_repo
 from app.schemas.messaging import (
     ConversationCreate,
     TypingIndicator,
@@ -23,29 +24,65 @@ class MessagingService:
         self,
         db: AsyncSession,
         creator_id: UUID,
-        data: ConversationCreate
+        data: ConversationCreate,
+        is_operator: bool = False
     ) -> Conversation:
-        """Create conversation and return Conversation ORM (with participants eager-loaded)."""
-        # Create conversation
+        """Create conversation and return Conversation ORM (with participants eager-loaded).
+        If support_center_id is provided and a conversation already exists between
+        the creator and that support center, the existing conversation is returned instead.
+        """
+        # Reuse existing conversation with this support center
+        if data.support_center_id and not is_operator:
+            existing = await conversation_repo.get_by_support_center_and_user(
+                db, data.support_center_id, creator_id
+            )
+            if existing:
+                return existing
+
         conv_data = {
             "conversation_type": data.conversation_type,
             "title": data.title,
-            "created_by": creator_id,
+            "created_by": creator_id if not is_operator else None,
         }
         if data.support_center_id:
             conv_data["support_center_id"] = data.support_center_id
 
         conversation = await conversation_repo.create(db, conv_data)
 
-        # Add participants
-        participants = [creator_id] + data.participant_ids
-        for user_id in set(participants):  # Remove duplicates
+        # Add creator
+        creator_participant_data = {
+            "conversation_id": conversation.id,
+            "role": "admin"
+        }
+        if is_operator:
+            creator_participant_data["operator_user_id"] = creator_id
+        else:
+            creator_participant_data["user_id"] = creator_id
+        await participant_repo.create(db, creator_participant_data)
+
+        # Add other participants (assuming these are mobile users)
+        for user_id in set(data.participant_ids):
             participant_data = {
                 "conversation_id": conversation.id,
                 "user_id": user_id,
-                "role": "admin" if user_id == creator_id else "member"
+                "role": "member"
             }
             await participant_repo.create(db, participant_data)
+
+        # If conversation is linked to a support center, add its operator(s) as participants
+        if data.support_center_id:
+            center = await support_center_repo.get_by_id(db, data.support_center_id)
+            if center and center.operator_id:
+                existing = await participant_repo.get_participant(
+                    db, conversation.id, operator_user_id=center.operator_id
+                )
+                if not existing:
+                    operator_participant_data = {
+                        "conversation_id": conversation.id,
+                        "operator_user_id": center.operator_id,
+                        "role": "member"
+                    }
+                    await participant_repo.create(db, operator_participant_data)
 
         # Return with eager-loaded participants
         return await conversation_repo.get_by_id_with_participants(db, conversation.id)
@@ -78,22 +115,29 @@ class MessagingService:
         self,
         db: AsyncSession,
         sender_id: UUID,
-        data
+        data,
+        is_operator: bool = False
     ) -> Message:
         """Send message and return Message ORM."""
-        # Verify sender is participant
-        participant = await participant_repo.get_participant(
-            db,
-            data.conversation_id,
-            sender_id
-        )
+        # Verify sender is an active participant (has not left)
+        if is_operator:
+            participant = await participant_repo.get_active_participant(
+                db,
+                data.conversation_id,
+                operator_user_id=sender_id
+            )
+        else:
+            participant = await participant_repo.get_active_participant(
+                db,
+                data.conversation_id,
+                user_id=sender_id
+            )
         if not participant:
             raise ValueError("Not a participant in this conversation")
 
         # Create message
         message_data = {
             "conversation_id": data.conversation_id,
-            "sender_id": sender_id,
             "encrypted_content": data.encrypted_content,
             "encryption_metadata": data.encryption_metadata,
             "content_type": data.content_type,
@@ -106,6 +150,10 @@ class MessagingService:
             "client_created_at": data.client_created_at,
             "offline_sequence": data.offline_sequence,
         }
+        if is_operator:
+            message_data["sender_operator_id"] = sender_id
+        else:
+            message_data["sender_id"] = sender_id
 
         message = await message_repo.create(db, message_data)
 
@@ -116,7 +164,7 @@ class MessagingService:
             await db.flush()
 
         # Send real-time notification
-        await self._notify_participants(db, data.conversation_id, message, sender_id)
+        await self._notify_participants(db, data.conversation_id, message, sender_id, is_operator)
 
         return message
 
@@ -124,7 +172,8 @@ class MessagingService:
         self,
         db: AsyncSession,
         conversation_id: UUID,
-        user_id: UUID,
+        user_id: Optional[UUID] = None,
+        operator_user_id: Optional[UUID] = None,
         skip: int = 0,
         limit: int = 50
     ) -> List[Message]:
@@ -133,7 +182,8 @@ class MessagingService:
         participant = await participant_repo.get_participant(
             db,
             conversation_id,
-            user_id
+            user_id=user_id,
+            operator_user_id=operator_user_id
         )
         if not participant:
             raise ValueError("Not a participant in this conversation")
@@ -144,25 +194,41 @@ class MessagingService:
         self,
         db: AsyncSession,
         conversation_id: UUID,
-        user_id: UUID
+        user_id: Optional[UUID] = None,
+        operator_user_id: Optional[UUID] = None
     ) -> bool:
-        return await participant_repo.mark_as_read(db, conversation_id, user_id, None) > 0
+        from datetime import datetime, timezone
+        participant = await participant_repo.get_participant(
+            db,
+            conversation_id,
+            user_id=user_id,
+            operator_user_id=operator_user_id
+        )
+        if participant:
+            participant.last_read_at = datetime.now(timezone.utc)
+            await db.flush()
+            return True
+        return False
 
     async def join_conversation(
         self,
         db: AsyncSession,
         conversation_id: UUID,
-        user_id: UUID
+        user_id: Optional[UUID] = None,
+        operator_user_id: Optional[UUID] = None
     ) -> bool:
-        existing = await participant_repo.get_participant(db, conversation_id, user_id)
+        existing = await participant_repo.get_participant(db, conversation_id, user_id=user_id, operator_user_id=operator_user_id)
         if existing:
             return True
 
         participant_data = {
             "conversation_id": conversation_id,
-            "user_id": user_id,
             "role": "member"
         }
+        if user_id:
+            participant_data["user_id"] = user_id
+        if operator_user_id:
+            participant_data["operator_user_id"] = operator_user_id
         await participant_repo.create(db, participant_data)
         return True
 
@@ -170,12 +236,14 @@ class MessagingService:
         self,
         db: AsyncSession,
         conversation_id: UUID,
-        user_id: UUID
+        user_id: Optional[UUID] = None,
+        operator_user_id: Optional[UUID] = None
     ) -> bool:
         participant = await participant_repo.get_participant(
             db,
             conversation_id,
-            user_id
+            user_id=user_id,
+            operator_user_id=operator_user_id
         )
         if participant:
             participant.left_at = datetime.now(timezone.utc)
@@ -208,30 +276,50 @@ class MessagingService:
         db: AsyncSession,
         conversation_id: UUID,
         message: Message,
-        sender_id: UUID
+        sender_id: UUID,
+        is_operator: bool
     ):
-        participants = await participant_repo.get_other_participants(
-            db,
-            conversation_id,
-            sender_id
-        )
+        if is_operator:
+            participants = await participant_repo.get_other_participants(
+                db,
+                conversation_id,
+                exclude_operator_user_id=sender_id
+            )
+        else:
+            participants = await participant_repo.get_other_participants(
+                db,
+                conversation_id,
+                exclude_user_id=sender_id
+            )
 
         notification = {
             "type": "new_message",
             "data": {
                 "conversation_id": str(conversation_id),
                 "message_id": str(message.id),
-                "sender_id": str(sender_id),
+                "sender_id": str(sender_id) if not is_operator else None,
+                "sender_operator_id": str(sender_id) if is_operator else None,
+                "is_operator_sender": is_operator,
+                "encrypted_content": message.encrypted_content,
+                "encryption_metadata": message.encryption_metadata,
                 "content_type": message.content_type,
-                "sent_at": message.sent_at.isoformat() if message.sent_at else None
+                "status": message.status,
+                "sent_at": message.sent_at.isoformat() if message.sent_at else None,
+                "server_created_at": message.server_created_at.isoformat() if message.server_created_at else None
             }
         }
 
         for participant in participants:
-            await connection_manager.send_personal_message(
-                str(participant.user_id),
-                notification
-            )
+            if participant.user_id:
+                await connection_manager.send_personal_message(
+                    str(participant.user_id),
+                    notification
+                )
+            if participant.operator_user_id:
+                await connection_manager.send_personal_message(
+                    str(participant.operator_user_id),
+                    notification
+                )
 
 
 messaging_service = MessagingService()

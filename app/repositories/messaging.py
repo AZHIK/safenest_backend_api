@@ -46,6 +46,45 @@ class ConversationRepository(BaseRepository[Conversation]):
         )
         return result.scalars().all()
 
+    async def get_for_operator(
+        self,
+        db: AsyncSession,
+        operator_user_id: UUID,
+        skip: int = 0,
+        limit: int = 20
+    ) -> List[Conversation]:
+        result = await db.execute(
+            select(Conversation)
+            .options(selectinload(Conversation.participants))
+            .join(ConversationParticipant)
+            .where(
+                ConversationParticipant.operator_user_id == operator_user_id,
+                ConversationParticipant.left_at.is_(None)
+            )
+            .order_by(Conversation.last_message_at.desc().nullslast())
+            .offset(skip)
+            .limit(limit)
+        )
+        return result.scalars().all()
+
+    async def get_by_support_center_and_user(
+        self,
+        db: AsyncSession,
+        support_center_id: UUID,
+        user_id: UUID
+    ) -> Optional[Conversation]:
+        result = await db.execute(
+            select(Conversation)
+            .options(selectinload(Conversation.participants))
+            .join(ConversationParticipant, Conversation.id == ConversationParticipant.conversation_id)
+            .where(
+                Conversation.support_center_id == support_center_id,
+                ConversationParticipant.user_id == user_id,
+                ConversationParticipant.left_at.is_(None)
+            )
+        )
+        return result.scalar_one_or_none()
+
     async def get_direct_conversation(
         self,
         db: AsyncSession,
@@ -159,32 +198,56 @@ class ConversationParticipantRepository(BaseRepository[ConversationParticipant])
         self,
         db: AsyncSession,
         conversation_id: UUID,
-        user_id: UUID
+        user_id: Optional[UUID] = None,
+        operator_user_id: Optional[UUID] = None
     ) -> Optional[ConversationParticipant]:
-        result = await db.execute(
-            select(ConversationParticipant)
-            .where(
-                ConversationParticipant.conversation_id == conversation_id,
-                ConversationParticipant.user_id == user_id,
-                ConversationParticipant.left_at.is_(None)
-            )
+        query = select(ConversationParticipant).where(
+            ConversationParticipant.conversation_id == conversation_id,
         )
+        if user_id:
+            query = query.where(ConversationParticipant.user_id == user_id)
+        if operator_user_id:
+            query = query.where(ConversationParticipant.operator_user_id == operator_user_id)
+
+        result = await db.execute(query)
+        return result.scalar_one_or_none()
+
+    async def get_active_participant(
+        self,
+        db: AsyncSession,
+        conversation_id: UUID,
+        user_id: Optional[UUID] = None,
+        operator_user_id: Optional[UUID] = None
+    ) -> Optional[ConversationParticipant]:
+        query = select(ConversationParticipant).where(
+            ConversationParticipant.conversation_id == conversation_id,
+            ConversationParticipant.left_at.is_(None)
+        )
+        if user_id:
+            query = query.where(ConversationParticipant.user_id == user_id)
+        if operator_user_id:
+            query = query.where(ConversationParticipant.operator_user_id == operator_user_id)
+
+        result = await db.execute(query)
         return result.scalar_one_or_none()
 
     async def get_other_participants(
         self,
         db: AsyncSession,
         conversation_id: UUID,
-        exclude_user_id: UUID
+        exclude_user_id: Optional[UUID] = None,
+        exclude_operator_user_id: Optional[UUID] = None
     ) -> List[ConversationParticipant]:
-        result = await db.execute(
-            select(ConversationParticipant)
-            .where(
-                ConversationParticipant.conversation_id == conversation_id,
-                ConversationParticipant.user_id != exclude_user_id,
-                ConversationParticipant.left_at.is_(None)
-            )
+        query = select(ConversationParticipant).where(
+            ConversationParticipant.conversation_id == conversation_id,
+            ConversationParticipant.left_at.is_(None)
         )
+        if exclude_user_id:
+            query = query.where(ConversationParticipant.user_id != exclude_user_id)
+        if exclude_operator_user_id:
+            query = query.where(ConversationParticipant.operator_user_id != exclude_operator_user_id)
+        
+        result = await db.execute(query)
         return result.scalars().all()
 
 

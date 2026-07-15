@@ -232,32 +232,41 @@ class RoleService:
         return await role_repo.list_roles(db, is_system, search, page, page_size)
 
     async def initialize_system_roles(self, db: AsyncSession) -> None:
-        """Initialize predefined system roles on first run."""
+        """Initialize or update predefined system roles."""
         existing_roles = await role_repo.list_roles(db, is_system=True, page_size=100)
-        existing_names = {r.name for r in existing_roles[0]}
+        existing_map = {r.name: r for r in existing_roles[0]}
         
         for role_name, permissions in SYSTEM_ROLE_PERMISSIONS.items():
-            if role_name in existing_names:
-                continue
+            role = existing_map.get(role_name)
             
-            # Create system role
-            role = Role(
-                name=role_name,
-                description=f"System role: {role_name}",
-                is_system=True
-            )
-            db.add(role)
-            await db.flush()
-            
-            # Assign permissions
-            await role_repo.assign_permissions(
-                db,
-                role.id,
-                list(permissions),
-                replace_existing=True
-            )
-            
-            logger.info("system_role_initialized", role_name=role_name, permission_count=len(permissions))
+            if role:
+                # Update existing role's permissions
+                await role_repo.assign_permissions(
+                    db,
+                    role.id,
+                    list(permissions),
+                    replace_existing=True
+                )
+                logger.info("system_role_updated", role_name=role_name, permission_count=len(permissions))
+            else:
+                # Create new system role
+                role = Role(
+                    name=role_name,
+                    description=f"System role: {role_name}",
+                    is_system=True
+                )
+                db.add(role)
+                await db.flush()
+                
+                # Assign permissions
+                await role_repo.assign_permissions(
+                    db,
+                    role.id,
+                    list(permissions),
+                    replace_existing=True
+                )
+                
+                logger.info("system_role_initialized", role_name=role_name, permission_count=len(permissions))
         
         await db.commit()
 

@@ -16,7 +16,8 @@ class ConversationParticipantResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
-    user_id: UUID
+    user_id: Optional[UUID]
+    operator_user_id: Optional[UUID]
     role: str
     joined_at: datetime
     last_read_at: Optional[datetime]
@@ -58,6 +59,7 @@ class MessageResponse(BaseModel):
     id: UUID
     conversation_id: UUID
     sender_id: Optional[UUID]
+    sender_operator_id: Optional[UUID]
     encrypted_content: str
     encryption_metadata: str
     content_type: str
@@ -94,6 +96,7 @@ def to_conversation_participant_response(participant) -> ConversationParticipant
     return ConversationParticipantResponse(
         id=participant.id,
         user_id=participant.user_id,
+        operator_user_id=participant.operator_user_id,
         role=participant.role,
         joined_at=participant.joined_at,
         last_read_at=participant.last_read_at
@@ -123,6 +126,7 @@ def to_message_response(message) -> MessageResponse:
         id=message.id,
         conversation_id=message.conversation_id,
         sender_id=message.sender_id,
+        sender_operator_id=message.sender_operator_id,
         encrypted_content=message.encrypted_content,
         encryption_metadata=message.encryption_metadata,
         content_type=message.content_type,
