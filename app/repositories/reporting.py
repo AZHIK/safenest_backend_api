@@ -83,6 +83,19 @@ class EvidenceFileRepository(BaseRepository[EvidenceFile]):
     def __init__(self):
         super().__init__(EvidenceFile)
 
+    async def get_by_original_filename(
+        self,
+        db: AsyncSession,
+        original_filename: str
+    ) -> Optional[EvidenceFile]:
+        result = await db.execute(
+            select(EvidenceFile)
+            .where(EvidenceFile.original_filename == original_filename)
+            .order_by(EvidenceFile.uploaded_at.desc())
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
+
     async def get_by_report(
         self,
         db: AsyncSession,
