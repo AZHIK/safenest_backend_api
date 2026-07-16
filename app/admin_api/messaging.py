@@ -1,11 +1,12 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
 from app.operator_auth import require_operator_permission
+from app.operator_services.operator_auth_service import operator_auth_service
 from app.models.messaging import Conversation, Message
 from app.schemas.messaging import (
     ConversationCreate,
@@ -17,6 +18,7 @@ from app.schemas.messaging import (
 )
 from app.repositories.messaging import conversation_repo, message_repo, participant_repo
 from app.services.messaging_service import messaging_service
+from app.websocket.chat_handler import chat_handler
 
 router = APIRouter()
 
@@ -166,4 +168,21 @@ async def mark_read(
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
         detail="Conversation not found"
+    )
+
+
+# WebSocket endpoint for operator real-time messaging
+@router.websocket("/ws/chat")
+async def operator_websocket_chat(websocket: WebSocket, token: str = None):
+    """WebSocket endpoint for operator real-time chat.
+    
+    Uses operator JWT authentication with domain check and blacklist support.
+    """
+    if not token:
+        await websocket.close(code=4001, reason="Token required")
+        return
+
+    await chat_handler.handle_connection(
+        websocket, token,
+        verify_fns=[operator_auth_service.verify_access_token]
     )

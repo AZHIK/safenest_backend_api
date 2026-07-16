@@ -4,8 +4,7 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.redis import redis_client
-from app.models.messaging import Conversation, ConversationParticipant, Message, MessageStatus
+from app.models.messaging import Conversation, ConversationParticipant, ConversationType, Message, MessageStatus
 from app.repositories.messaging import (
     conversation_repo,
     message_repo,
@@ -14,7 +13,6 @@ from app.repositories.messaging import (
 from app.repositories.support import support_center_repo
 from app.schemas.messaging import (
     ConversationCreate,
-    TypingIndicator,
 )
 from app.websocket.connection_manager import connection_manager
 
@@ -28,21 +26,30 @@ class MessagingService:
         is_operator: bool = False
     ) -> Conversation:
         """Create conversation and return Conversation ORM (with participants eager-loaded).
-        If support_center_id is provided and a conversation already exists between
-        the creator and that support center, the existing conversation is returned instead.
+        If a conversation already exists between the same participants or support center,
+        the existing conversation is returned instead.
         """
-        # Reuse existing conversation with this support center
-        if data.support_center_id and not is_operator:
+        # Reuse existing support conversation
+        if data.support_center_id:
             existing = await conversation_repo.get_by_support_center_and_user(
                 db, data.support_center_id, creator_id
             )
             if existing:
                 return existing
 
+        # Reuse existing direct conversation with same participant set
+        if data.conversation_type == ConversationType.DIRECT and data.participant_ids:
+            for pid in data.participant_ids:
+                existing = await conversation_repo.get_direct_conversation(
+                    db, creator_id, UUID(pid) if isinstance(pid, str) else pid
+                )
+                if existing:
+                    return existing
+
         conv_data = {
             "conversation_type": data.conversation_type,
             "title": data.title,
-            "created_by": creator_id if not is_operator else None,
+            "created_by": creator_id,
         }
         if data.support_center_id:
             conv_data["support_center_id"] = data.support_center_id
@@ -257,16 +264,13 @@ class MessagingService:
         user_id: UUID,
         is_typing: bool
     ):
-        indicator = TypingIndicator(
-            conversation_id=conversation_id,
-            user_id=user_id,
-            is_typing=is_typing
-        )
         await connection_manager.broadcast_to_conversation(
             str(conversation_id),
             {
                 "type": "typing",
-                "data": indicator.model_dump()
+                "user_id": str(user_id),
+                "conversation_id": str(conversation_id),
+                "is_typing": is_typing
             },
             exclude_user_id=str(user_id)
         )

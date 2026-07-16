@@ -1,4 +1,5 @@
 import json
+import inspect
 from typing import Dict, List, Optional, Set
 from uuid import UUID
 
@@ -16,17 +17,36 @@ class ConnectionManager:
     """WebSocket connection manager for real-time messaging and SOS monitoring."""
 
     def __init__(self):
-        # user_id -> WebSocket
-        self.active_connections: Dict[str, WebSocket] = {}
+        # user_id -> list of WebSocket connections (supports multi-device)
+        self.active_connections: Dict[str, List[WebSocket]] = {}
         # conversation_id -> set of user_ids
         self.conversation_subscribers: Dict[str, Set[str]] = {}
         # user_id -> set of conversation_ids
         self.user_conversations: Dict[str, Set[str]] = {}
 
-    async def connect(self, websocket: WebSocket, token: str) -> Optional[str]:
-        """Authenticate and connect a WebSocket."""
+    async def connect(self, websocket: WebSocket, token: str, verify_fns: Optional[List] = None) -> Optional[str]:
+        """Authenticate and connect a WebSocket.
+        
+        Args:
+            websocket: The WebSocket connection
+            token: JWT token string
+            verify_fns: Optional list of token verification functions.
+                       Defaults to [token_manager.verify_access_token] for survivor tokens.
+                       Pass [operator_auth_service.verify_access_token] for operator tokens.
+        """
         try:
-            payload = token_manager.verify_access_token(token)
+            if verify_fns is None:
+                verify_fns = [token_manager.verify_access_token]
+
+            payload = None
+            for fn in verify_fns:
+                result = fn(token)
+                if inspect.iscoroutine(result):
+                    result = await result
+                if result:
+                    payload = result
+                    break
+
             if not payload:
                 await websocket.close(code=4001, reason="Invalid token")
                 return None
@@ -37,9 +57,11 @@ class ConnectionManager:
                 return None
 
             await websocket.accept()
-            self.active_connections[user_id] = websocket
+            if user_id not in self.active_connections:
+                self.active_connections[user_id] = []
+            self.active_connections[user_id].append(websocket)
 
-            logger.info("websocket_connected", user_id=user_id)
+            logger.info("websocket_connected", user_id=user_id, connections=len(self.active_connections[user_id]))
             return user_id
 
         except Exception as e:
@@ -47,49 +69,66 @@ class ConnectionManager:
             await websocket.close(code=4001, reason="Authentication failed")
             return None
 
-    async def disconnect(self, user_id: str):
-        """Disconnect and clean up."""
+    async def disconnect(self, user_id: str, websocket: Optional[WebSocket] = None):
+        """Disconnect a WebSocket and clean up."""
         if user_id in self.active_connections:
-            del self.active_connections[user_id]
+            if websocket:
+                try:
+                    self.active_connections[user_id].remove(websocket)
+                except ValueError:
+                    pass
+                if not self.active_connections[user_id]:
+                    del self.active_connections[user_id]
+            else:
+                del self.active_connections[user_id]
 
-        # Remove from all conversations
-        if user_id in self.user_conversations:
-            for conv_id in self.user_conversations[user_id]:
-                if conv_id in self.conversation_subscribers:
-                    self.conversation_subscribers[conv_id].discard(user_id)
-            del self.user_conversations[user_id]
+        # Remove subscriptions only when ALL connections for this user are gone
+        if user_id not in self.active_connections:
+            if user_id in self.user_conversations:
+                for conv_id in self.user_conversations[user_id]:
+                    if conv_id in self.conversation_subscribers:
+                        self.conversation_subscribers[conv_id].discard(user_id)
+                del self.user_conversations[user_id]
 
         logger.info("websocket_disconnected", user_id=user_id)
 
     async def send_personal_message(self, user_id: str, message: dict) -> bool:
-        """Send message to a specific user."""
+        """Send message to a specific user (all their connected devices)."""
         if user_id not in self.active_connections:
             return False
 
-        try:
-            websocket = self.active_connections[user_id]
-            await websocket.send_json(message)
-            return True
-        except Exception as e:
-            logger.error("send_personal_message_failed", user_id=user_id, error=str(e))
-            return False
+        success = False
+        disconnected_conns = []
+        for ws in self.active_connections[user_id]:
+            try:
+                await ws.send_json(message)
+                success = True
+            except Exception as e:
+                logger.error("send_personal_message_failed", user_id=user_id, error=str(e))
+                disconnected_conns.append(ws)
+
+        for ws in disconnected_conns:
+            await self.disconnect(user_id, ws)
+
+        return success
 
     async def broadcast(self, message: dict, exclude_user_id: Optional[str] = None):
         """Broadcast to all connected users."""
         disconnected = []
 
-        for user_id, websocket in self.active_connections.items():
+        for user_id, connections in self.active_connections.items():
             if user_id == exclude_user_id:
                 continue
 
-            try:
-                await websocket.send_json(message)
-            except Exception:
-                disconnected.append(user_id)
+            for ws in connections:
+                try:
+                    await ws.send_json(message)
+                except Exception:
+                    disconnected.append((user_id, ws))
 
         # Clean up disconnected clients
-        for user_id in disconnected:
-            await self.disconnect(user_id)
+        for user_id, ws in disconnected:
+            await self.disconnect(user_id, ws)
 
     def subscribe_to_conversation(self, user_id: str, conversation_id: str):
         """Subscribe user to conversation updates."""
@@ -135,15 +174,15 @@ class ConnectionManager:
             if user_id not in self.active_connections:
                 continue
 
-            try:
-                websocket = self.active_connections[user_id]
-                await websocket.send_json(message)
-            except Exception:
-                disconnected.append(user_id)
+            for ws in self.active_connections[user_id]:
+                try:
+                    await ws.send_json(message)
+                except Exception:
+                    disconnected.append((user_id, ws))
 
         # Clean up disconnected clients
-        for user_id in disconnected:
-            await self.disconnect(user_id)
+        for user_id, ws in disconnected:
+            await self.disconnect(user_id, ws)
 
     async def handle_sos_update(self, alert_id: str, update_data: dict):
         """Broadcast SOS alert updates to relevant parties."""
@@ -166,17 +205,15 @@ class ConnectionManager:
             "location": location_data
         }
 
-        # Notify all connected parties monitoring this alert
-        # This would be extended based on your specific requirements
         await self.broadcast(message)
 
     def is_connected(self, user_id: str) -> bool:
-        """Check if user is currently connected."""
-        return user_id in self.active_connections
+        """Check if user has any active connections."""
+        return user_id in self.active_connections and bool(self.active_connections[user_id])
 
     def get_connection_count(self) -> int:
         """Get number of active connections."""
-        return len(self.active_connections)
+        return sum(len(conns) for conns in self.active_connections.values())
 
     def get_conversation_subscribers(self, conversation_id: str) -> Set[str]:
         """Get set of users subscribed to a conversation."""

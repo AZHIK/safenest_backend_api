@@ -124,7 +124,7 @@ class MessageRepository(BaseRepository[Message]):
                 Message.conversation_id == conversation_id,
                 Message.is_deleted == False
             )
-            .order_by(Message.server_created_at.desc())
+            .order_by(Message.server_created_at.asc())
             .offset(skip)
             .limit(limit)
         )
@@ -199,11 +199,14 @@ class ConversationParticipantRepository(BaseRepository[ConversationParticipant])
         db: AsyncSession,
         conversation_id: UUID,
         user_id: Optional[UUID] = None,
-        operator_user_id: Optional[UUID] = None
+        operator_user_id: Optional[UUID] = None,
+        include_inactive: bool = False
     ) -> Optional[ConversationParticipant]:
         query = select(ConversationParticipant).where(
             ConversationParticipant.conversation_id == conversation_id,
         )
+        if not include_inactive:
+            query = query.where(ConversationParticipant.left_at.is_(None))
         if user_id:
             query = query.where(ConversationParticipant.user_id == user_id)
         if operator_user_id:

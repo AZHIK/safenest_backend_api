@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import Callable, List, Optional
 
 from fastapi import WebSocket, WebSocketDisconnect
 
@@ -12,9 +12,16 @@ logger = get_logger(__name__)
 class ChatWebSocketHandler:
     """Handler for chat WebSocket connections."""
 
-    async def handle_connection(self, websocket: WebSocket, token: str):
-        """Main WebSocket handler for chat connections."""
-        user_id = await connection_manager.connect(websocket, token)
+    async def handle_connection(self, websocket: WebSocket, token: str, verify_fns: Optional[List[Callable]] = None):
+        """Main WebSocket handler for chat connections.
+        
+        Args:
+            websocket: The WebSocket connection
+            token: JWT token string
+            verify_fns: Optional list of token verification functions.
+                       If None, uses survivor token verification.
+        """
+        user_id = await connection_manager.connect(websocket, token, verify_fns=verify_fns)
         if not user_id:
             return
 
@@ -28,7 +35,7 @@ class ChatWebSocketHandler:
                 await self._handle_message(user_id, message)
 
         except WebSocketDisconnect:
-            await connection_manager.disconnect(user_id)
+            await connection_manager.disconnect(user_id, websocket)
         except json.JSONDecodeError:
             await websocket.send_json({
                 "type": "error",
@@ -36,7 +43,7 @@ class ChatWebSocketHandler:
             })
         except Exception as e:
             logger.error("websocket_handler_error", user_id=user_id, error=str(e))
-            await connection_manager.disconnect(user_id)
+            await connection_manager.disconnect(user_id, websocket)
 
     async def _handle_message(self, user_id: str, message: dict):
         """Route message to appropriate handler."""
@@ -86,6 +93,7 @@ class ChatWebSocketHandler:
                 {
                     "type": "typing",
                     "user_id": user_id,
+                    "conversation_id": str(conversation_id),
                     "is_typing": is_typing
                 },
                 exclude_user_id=user_id
@@ -100,7 +108,6 @@ class ChatWebSocketHandler:
 
     async def _handle_message_status(self, user_id: str, data: dict):
         """Handle message status updates (delivered, read)."""
-        # Broadcast status to conversation
         conversation_id = data.get("conversation_id")
         message_id = data.get("message_id")
         status = data.get("status")

@@ -97,9 +97,10 @@ class ConversationParticipant(SQLModel, table=True):
         sa_relationship_kwargs={"foreign_keys": "ConversationParticipant.user_id"}
     )
 
-    # Unique constraint
+    # Unique constraints
     __table_args__ = (
         UniqueConstraint('conversation_id', 'user_id', name='unique_conversation_participant'),
+        UniqueConstraint('conversation_id', 'operator_user_id', name='unique_conversation_operator_participant'),
     )
 
     def __repr__(self):
