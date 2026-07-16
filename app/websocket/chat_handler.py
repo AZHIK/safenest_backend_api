@@ -1,4 +1,5 @@
 import json
+import inspect
 from typing import Callable, List, Optional
 
 from fastapi import WebSocket, WebSocketDisconnect
@@ -12,7 +13,7 @@ logger = get_logger(__name__)
 class ChatWebSocketHandler:
     """Handler for chat WebSocket connections."""
 
-    async def handle_connection(self, websocket: WebSocket, token: str, verify_fns: Optional[List[Callable]] = None):
+    async def handle_connection(self, websocket: WebSocket, token: str, verify_fns: Optional[List[Callable]] = None, is_operator: bool = False):
         """Main WebSocket handler for chat connections.
         
         Args:
@@ -20,8 +21,9 @@ class ChatWebSocketHandler:
             token: JWT token string
             verify_fns: Optional list of token verification functions.
                        If None, uses survivor token verification.
+            is_operator: Whether this is an operator connection
         """
-        user_id = await connection_manager.connect(websocket, token, verify_fns=verify_fns)
+        user_id = await connection_manager.connect(websocket, token, verify_fns=verify_fns, is_operator=is_operator)
         if not user_id:
             return
 

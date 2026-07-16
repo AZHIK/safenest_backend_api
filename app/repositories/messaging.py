@@ -246,10 +246,32 @@ class ConversationParticipantRepository(BaseRepository[ConversationParticipant])
             ConversationParticipant.left_at.is_(None)
         )
         if exclude_user_id:
-            query = query.where(ConversationParticipant.user_id != exclude_user_id)
+            query = query.where(
+                or_(
+                    ConversationParticipant.user_id != exclude_user_id,
+                    ConversationParticipant.user_id.is_(None)
+                )
+            )
         if exclude_operator_user_id:
-            query = query.where(ConversationParticipant.operator_user_id != exclude_operator_user_id)
+            query = query.where(
+                or_(
+                    ConversationParticipant.operator_user_id != exclude_operator_user_id,
+                    ConversationParticipant.operator_user_id.is_(None)
+                )
+            )
         
+        result = await db.execute(query)
+        return result.scalars().all()
+
+    async def get_by_operator_user_id(
+        self,
+        db: AsyncSession,
+        operator_user_id: UUID
+    ) -> List[ConversationParticipant]:
+        """Get all conversation participations for an operator."""
+        query = select(ConversationParticipant).where(
+            ConversationParticipant.operator_user_id == operator_user_id
+        )
         result = await db.execute(query)
         return result.scalars().all()
 

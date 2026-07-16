@@ -184,5 +184,6 @@ async def operator_websocket_chat(websocket: WebSocket, token: str = None):
 
     await chat_handler.handle_connection(
         websocket, token,
-        verify_fns=[operator_auth_service.verify_access_token]
+        verify_fns=[operator_auth_service.verify_access_token],
+        is_operator=True
     )

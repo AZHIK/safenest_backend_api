@@ -8,6 +8,8 @@ from fastapi import WebSocket, WebSocketDisconnect
 from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.core.security import token_manager
+from app.repositories.messaging import participant_repo
+from app.db.database import get_db
 
 settings = get_settings()
 logger = get_logger(__name__)
@@ -24,7 +26,7 @@ class ConnectionManager:
         # user_id -> set of conversation_ids
         self.user_conversations: Dict[str, Set[str]] = {}
 
-    async def connect(self, websocket: WebSocket, token: str, verify_fns: Optional[List] = None) -> Optional[str]:
+    async def connect(self, websocket: WebSocket, token: str, verify_fns: Optional[List] = None, is_operator: bool = False) -> Optional[str]:
         """Authenticate and connect a WebSocket.
         
         Args:
@@ -33,6 +35,7 @@ class ConnectionManager:
             verify_fns: Optional list of token verification functions.
                        Defaults to [token_manager.verify_access_token] for survivor tokens.
                        Pass [operator_auth_service.verify_access_token] for operator tokens.
+            is_operator: Whether this is an operator connection (for auto-subscription)
         """
         try:
             if verify_fns is None:
@@ -61,13 +64,31 @@ class ConnectionManager:
                 self.active_connections[user_id] = []
             self.active_connections[user_id].append(websocket)
 
-            logger.info("websocket_connected", user_id=user_id, connections=len(self.active_connections[user_id]))
+            logger.info("websocket_connected", user_id=user_id, connections=len(self.active_connections[user_id]), is_operator=is_operator)
+
+            # Auto-subscribe to conversations if operator
+            if is_operator:
+                await self._auto_subscribe_operator_conversations(user_id)
+
             return user_id
 
         except Exception as e:
             logger.error("websocket_connection_error", error=str(e))
             await websocket.close(code=4001, reason="Authentication failed")
             return None
+
+    async def _auto_subscribe_operator_conversations(self, operator_user_id: str):
+        """Auto-subscribe operator to all their active conversations."""
+        try:
+            async with get_db() as db:
+                # Get all conversations where this operator is an active participant
+                participants = await participant_repo.get_by_operator_user_id(db, UUID(operator_user_id))
+                for participant in participants:
+                    if participant.left_at is None:
+                        self.subscribe_to_conversation(operator_user_id, str(participant.conversation_id))
+                logger.info("operator_auto_subscribed", operator_id=operator_user_id, count=len(participants))
+        except Exception as e:
+            logger.error("operator_auto_subscribe_failed", operator_id=operator_user_id, error=str(e))
 
     async def disconnect(self, user_id: str, websocket: Optional[WebSocket] = None):
         """Disconnect a WebSocket and clean up."""

@@ -15,6 +15,9 @@ from app.schemas.messaging import (
     ConversationCreate,
 )
 from app.websocket.connection_manager import connection_manager
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class MessagingService:
@@ -92,7 +95,13 @@ class MessagingService:
                     await participant_repo.create(db, operator_participant_data)
 
         # Return with eager-loaded participants
-        return await conversation_repo.get_by_id_with_participants(db, conversation.id)
+        conversation = await conversation_repo.get_by_id_with_participants(db, conversation.id)
+
+        # Notify support center operators about new conversation
+        if data.support_center_id:
+            await self._notify_support_operators_new_conversation(db, conversation)
+
+        return conversation
 
     async def get_conversation(
         self,
@@ -324,6 +333,39 @@ class MessagingService:
                     str(participant.operator_user_id),
                     notification
                 )
+
+    async def _notify_support_operators_new_conversation(
+        self,
+        db: AsyncSession,
+        conversation: Conversation
+    ):
+        """Notify support center operators about a new support conversation."""
+        if not conversation.support_center_id:
+            return
+
+        center = await support_center_repo.get_by_id(db, conversation.support_center_id)
+        if not center or not center.operator_id:
+            return
+
+        notification = {
+            "type": "new_conversation",
+            "data": {
+                "conversation_id": str(conversation.id),
+                "conversation_type": conversation.conversation_type,
+                "title": conversation.title,
+                "support_center_id": str(conversation.support_center_id),
+                "last_message_at": conversation.last_message_at.isoformat() if conversation.last_message_at else None,
+                "created_at": conversation.created_at.isoformat() if conversation.created_at else None,
+            }
+        }
+
+        await connection_manager.send_personal_message(
+            str(center.operator_id),
+            notification
+        )
+        logger.info("notified_operator_new_conversation", 
+                   operator_id=center.operator_id, 
+                   conversation_id=conversation.id)
 
 
 messaging_service = MessagingService()
